@@ -9,8 +9,8 @@ import numpy as np
 
 from keras.optimizers import Adam
 
-from model.unet import unet
-from utils.img_processing import binarize_img, mkdir_s
+from .unet import unet
+from .img_processing import binarize_img, mkdir_s
 
 desc_str = r"""Binarize images from input directory and
             write them to output directory.

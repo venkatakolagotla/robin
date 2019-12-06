@@ -20,8 +20,8 @@ from keras.callbacks import TensorBoard, Callback
 from keras.utils import multi_gpu_model, Sequence
 from alt_model_checkpoint import AltModelCheckpoint
 
-from model.unet import unet
-from utils.img_processing import (
+from .unet import unet
+from .img_processing import (
     binarize_img,
     mkdir_s,
     normalize_gt,
