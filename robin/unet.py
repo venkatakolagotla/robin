@@ -29,13 +29,19 @@ def double_conv_layer(inputs: keras_layer, filter: int) -> keras_layer:
     robin.unet.double_conv_layer(keras_layer, 32)
 
     """
-    conv = Conv2D(filter, (3, 3), padding="same", kernel_initializer="he_normal")(
-        inputs
-    )
+    conv = Conv2D(
+        filter,
+        (3, 3),
+        padding="same",
+        kernel_initializer="he_normal")(inputs)
 
     conv = BatchNormalization(axis=3)(conv)
     conv = Activation("relu")(conv)
-    conv = Conv2D(filter, (3, 3), padding="same", kernel_initializer="he_normal")(conv)
+    conv = Conv2D(
+        filter,
+        (3, 3),
+        padding="same",
+        kernel_initializer="he_normal")(conv)
     conv = BatchNormalization(axis=3)(conv)
     conv = Activation("relu")(conv)
     conv = SpatialDropout2D(0.1)(conv)
@@ -71,7 +77,11 @@ def down_layer(inputs: keras_layer, filter: int) -> keras_layer:
     return conv, pool
 
 
-def up_layer(inputs: keras_layer, concats: keras_layer, filter: int) -> keras_layer:
+def up_layer(
+    inputs: keras_layer,
+    concats: keras_layer,
+    filter: int
+) -> keras_layer:
     """Create upsampling layer.
 
     Parameters
@@ -98,7 +108,8 @@ def up_layer(inputs: keras_layer, concats: keras_layer, filter: int) -> keras_la
 
     """
     return double_conv_layer(
-        concatenate([UpSampling2D(size=(2, 2))(inputs), concats], axis=3), filter
+        concatenate([UpSampling2D(size=(2, 2))(inputs), concats], axis=3),
+        filter
     )
 
 
@@ -144,3 +155,7 @@ def unet() -> Model:
     model = Model(inputs, outputs)
 
     return model
+
+
+if __name__ == "__main__":
+    unet()
