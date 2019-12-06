@@ -6,12 +6,21 @@ from keras.models import Model
 
 
 def double_conv_layer(inputs, filter):
-    conv = Conv2D(filter, (3, 3), padding='same', kernel_initializer='he_normal')(inputs)
+    conv = Conv2D(
+        filter,
+        (3, 3),
+        padding="same",
+        kernel_initializer="he_normal")(inputs)
+
     conv = BatchNormalization(axis=3)(conv)
-    conv = Activation('relu')(conv)
-    conv = Conv2D(filter, (3, 3), padding='same', kernel_initializer='he_normal')(conv)
+    conv = Activation("relu")(conv)
+    conv = Conv2D(
+        filter,
+        (3, 3),
+        padding="same",
+        kernel_initializer="he_normal")(conv)
     conv = BatchNormalization(axis=3)(conv)
-    conv = Activation('relu')(conv)
+    conv = Activation("relu")(conv)
     conv = SpatialDropout2D(0.1)(conv)
     return conv
 
@@ -25,7 +34,9 @@ def down_layer(inputs, filter):
 
 def up_layer(inputs, concats, filter):
     """Create upsampling layer."""
-    return double_conv_layer(concatenate([UpSampling2D(size=(2, 2))(inputs), concats], axis=3), filter)
+    return double_conv_layer(
+        concatenate([UpSampling2D(size=(2, 2))(inputs), concats], axis=3),
+        filter)
 
 
 def unet():
@@ -50,7 +61,7 @@ def unet():
     up1 = up_layer(up2, down1, 32)
 
     outputs = Conv2D(1, (1, 1))(up1)
-    outputs = Activation('sigmoid')(outputs)
+    outputs = Activation("sigmoid")(outputs)
 
     model = Model(inputs, outputs)
 

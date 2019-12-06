@@ -19,25 +19,47 @@ def normalize_gt(img: np.array) -> np.array:
     return img
 
 
-def add_border(img: np.array, size_x: int = 128, size_y: int = 128) -> (np.array, int, int):
-    """Add border to image, so it will divide window sizes: size_x and size_y"""
+def add_border(
+    img: np.array, size_x: int = 128, size_y: int = 128
+) -> (np.array, int, int):
+    """Add border to image,
+    so it will divide window sizes: size_x and size_y"""
     max_y, max_x = img.shape[:2]
     border_y = 0
     if max_y % size_y != 0:
         border_y = (size_y - (max_y % size_y) + 1) // 2
-        img = cv2.copyMakeBorder(img, border_y, border_y, 0, 0, cv2.BORDER_CONSTANT, value=[255, 255, 255])
+        img = cv2.copyMakeBorder(
+            img,
+            border_y,
+            border_y,
+            0,
+            0,
+            cv2.BORDER_CONSTANT,
+            value=[255, 255, 255]
+        )
     border_x = 0
     if max_x % size_x != 0:
         border_x = (size_x - (max_x % size_x) + 1) // 2
-        img = cv2.copyMakeBorder(img, 0, 0, border_x, border_x, cv2.BORDER_CONSTANT, value=[255, 255, 255])
+        img = cv2.copyMakeBorder(
+            img,
+            0,
+            0,
+            border_x,
+            border_x,
+            cv2.BORDER_CONSTANT,
+            value=[255, 255, 255]
+        )
     return img, border_y, border_x
 
 
-def split_img(img: np.array, size_x: int = 128, size_y: int = 128) -> [np.array]:
+def split_img(
+    img: np.array, size_x: int = 128, size_y: int = 128
+) -> [np.array]:
     """Split image to parts (little images).
 
-    Walk through the whole image by the window of size size_x * size_y without overlays and
-    save all parts in list. Images sizes should divide window sizes.
+    Walk through the whole image by the window of size size_x * size_y
+    without overlays and save all parts in list.
+    Images sizes should divide window sizes.
 
     """
     max_y, max_x = img.shape[:2]
@@ -47,7 +69,7 @@ def split_img(img: np.array, size_x: int = 128, size_y: int = 128) -> [np.array]
     while (curr_y + size_y) <= max_y:
         curr_x = 0
         while (curr_x + size_x) <= max_x:
-            parts.append(img[curr_y:curr_y + size_y, curr_x:curr_x + size_x])
+            parts.append(img[curr_y: curr_y + size_y, curr_x: curr_x + size_x])
             curr_x += size_x
         curr_y += size_y
     return parts
@@ -56,8 +78,10 @@ def split_img(img: np.array, size_x: int = 128, size_y: int = 128) -> [np.array]
 def combine_imgs(imgs: [np.array], max_y: int, max_x: int) -> np.array:
     """Combine image parts to one big image.
 
-    Walk through list of images and create from them one big image with sizes max_x * max_y.
-    If border_x and border_y are non-zero, they will be removed from created image.
+    Walk through list of images and create from them one big image
+    with sizes max_x * max_y.
+    If border_x and border_y are non-zero,
+    they will be removed from created image.
     The list of images should contain data in the following order:
     from left to right, from top to bottom.
 
@@ -71,8 +95,8 @@ def combine_imgs(imgs: [np.array], max_y: int, max_x: int) -> np.array:
         curr_x = 0
         while (curr_x + size_x) <= max_x:
             try:
-                img[curr_y:curr_y + size_y, curr_x:curr_x + size_x] = imgs[i]
-            except:
+                img[curr_y: curr_y + size_y, curr_x: curr_x + size_x] = imgs[i]
+            except Exception:
                 i -= 1
             i += 1
             curr_x += size_x
@@ -82,7 +106,7 @@ def combine_imgs(imgs: [np.array], max_y: int, max_x: int) -> np.array:
 
 def preprocess_img(img: np.array) -> np.array:
     """Apply bilateral filter to image."""
-    #img = cv2.bilateralFilter(img, 5, 50, 50) TODO: change parameters.
+    # img = cv2.bilateralFilter(img, 5, 50, 50) TODO: change parameters.
     return img
 
 
@@ -100,7 +124,9 @@ def process_unet_img(img: np.array, model, batchsize: int = 20) -> np.array:
         tmp.append(part)
     parts = tmp
     img = combine_imgs(parts, img.shape[0], img.shape[1])
-    img = img[border_y:img.shape[0] - border_y, border_x:img.shape[1] - border_x]
+    img = img[
+        border_y: img.shape[0] - border_y,
+        border_x: img.shape[1] - border_x]
     img = img * 255.0
     img = img.astype(np.uint8)
     return img
