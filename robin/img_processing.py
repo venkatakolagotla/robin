@@ -4,9 +4,48 @@ import os
 import cv2
 import numpy as np
 
+from keras.models import Model as keras_model
+
+
+def mkdir_s(path: str) -> None:
+    """Create directory in specified path, if not exists.
+
+    Parameters
+    ----------
+    path: str
+        directory name to create
+
+    Returns
+    -------
+    None
+
+    Example
+    -------
+    robin.img_processing.mkdir_s(dir_name)
+
+    """
+    if not os.path.exists(path):
+        os.makedirs(path)
+
 
 def normalize_in(img: np.array) -> np.array:
-    """"""
+    """Normalize the input image to have all pixels in range 0 to 1.
+
+    Parameters
+    ----------
+    img: np.array
+        image array to normalize
+
+    Returns
+    -------
+    np.array
+        normalized image array
+
+    Example
+    -------
+    robin.img_processing.normalize_in(img_array)
+
+    """
     img = img.astype(np.float32)
     img /= 256.0
     img -= 0.5
@@ -14,7 +53,23 @@ def normalize_in(img: np.array) -> np.array:
 
 
 def normalize_gt(img: np.array) -> np.array:
-    """"""
+    """Normalize the gt image to have all pixels in range 0 to 1.
+
+    Parameters
+    ----------
+    img: np.array
+        image array to normalize
+
+    Returns
+    -------
+    np.array
+        normalized image array
+
+    Example
+    -------
+    robin.img_processing.normalize_gt(img_array)
+
+    """
     img = img.astype(np.float32)
     img /= 255.0
     return img
@@ -24,43 +79,72 @@ def add_border(
     img: np.array, size_x: int = 128, size_y: int = 128
 ) -> (np.array, int, int):
     """Add border to image,
-    so it will divide window sizes: size_x and size_y"""
+    so it will divide window sizes: size_x and size_y
+
+    Parameters
+    ----------
+    img: np.array
+        image array to add border
+    size_x: int
+        width for image part (deafult is `128`).
+    size_y: int
+        height for image part (deafult is `128`).
+
+    Returns
+    -------
+    np.array
+        image array with border
+    int
+        border value on width
+    int border value on height
+
+    Example
+    -------
+    robin.img_processing.add_border(img_array, 128, 128)
+
+    """
     max_y, max_x = img.shape[:2]
     border_y = 0
     if max_y % size_y != 0:
         border_y = (size_y - (max_y % size_y) + 1) // 2
         img = cv2.copyMakeBorder(
-            img,
-            border_y,
-            border_y,
-            0,
-            0,
-            cv2.BORDER_CONSTANT,
-            value=[255, 255, 255]
+            img, border_y, border_y, 0, 0, cv2.BORDER_CONSTANT, value=[255, 255, 255]
         )
     border_x = 0
     if max_x % size_x != 0:
         border_x = (size_x - (max_x % size_x) + 1) // 2
         img = cv2.copyMakeBorder(
-            img,
-            0,
-            0,
-            border_x,
-            border_x,
-            cv2.BORDER_CONSTANT,
-            value=[255, 255, 255]
+            img, 0, 0, border_x, border_x, cv2.BORDER_CONSTANT, value=[255, 255, 255]
         )
     return img, border_y, border_x
 
 
-def split_img(
-    img: np.array, size_x: int = 128, size_y: int = 128
-) -> [np.array]:
+def split_img(img: np.array, size_x: int = 128, size_y: int = 128) -> [np.array]:
     """Split image to parts (little images).
 
+    Parameters
+    ----------
+    img: np.array
+        image array to split
+    size_x: int
+        width for image part (deafult is `128`).
+    size_y: int
+        height for image part (deafult is `128`).
+
+    Returns
+    -------
+    array_like
+        list of np.array of image parts
+
+    Notes
+    -----
     Walk through the whole image by the window of size size_x * size_y
     without overlays and save all parts in list.
     Images sizes should divide window sizes.
+
+    Example
+    -------
+    robin.img_processing.split_img(img_array, 128, 128)
 
     """
     max_y, max_x = img.shape[:2]
@@ -70,7 +154,7 @@ def split_img(
     while (curr_y + size_y) <= max_y:
         curr_x = 0
         while (curr_x + size_x) <= max_x:
-            parts.append(img[curr_y: curr_y + size_y, curr_x: curr_x + size_x])
+            parts.append(img[curr_y : curr_y + size_y, curr_x : curr_x + size_x])
             curr_x += size_x
         curr_y += size_y
     return parts
@@ -79,12 +163,32 @@ def split_img(
 def combine_imgs(imgs: [np.array], max_y: int, max_x: int) -> np.array:
     """Combine image parts to one big image.
 
+    Parameters
+    ----------
+    img: array_like
+        list image arraies to combine
+    max_y: int
+        width for image part (deafult is `128`).
+    max_x: int
+        height for image part (deafult is `128`).
+
+    Returns
+    -------
+    np.array
+        np.array of combined image
+
+    Notes
+    -----
     Walk through list of images and create from them one big image
     with sizes max_x * max_y.
     If border_x and border_y are non-zero,
     they will be removed from created image.
     The list of images should contain data in the following order:
     from left to right, from top to bottom.
+
+    Example
+    -------
+    robin.img_processing.combine_imgs(img_array_list, 128, 128)
 
     """
     img = np.zeros((max_y, max_x), np.float)
@@ -96,7 +200,7 @@ def combine_imgs(imgs: [np.array], max_y: int, max_x: int) -> np.array:
         curr_x = 0
         while (curr_x + size_x) <= max_x:
             try:
-                img[curr_y: curr_y + size_y, curr_x: curr_x + size_x] = imgs[i]
+                img[curr_y : curr_y + size_y, curr_x : curr_x + size_x] = imgs[i]
             except Exception:
                 i -= 1
             i += 1
@@ -106,13 +210,55 @@ def combine_imgs(imgs: [np.array], max_y: int, max_x: int) -> np.array:
 
 
 def preprocess_img(img: np.array) -> np.array:
-    """Apply bilateral filter to image."""
+    """Apply bilateral filter to image.
+
+    Parameters
+    ----------
+    img: np.array
+        image array to preprocess
+
+    Returns
+    -------
+    np.array
+        image array after preprocessing
+
+    Example
+    -------
+    robin.img_preprocessing.preprocess_img(img_array)
+
+    """
     # img = cv2.bilateralFilter(img, 5, 50, 50) TODO: change parameters.
     return img
 
 
-def process_unet_img(img: np.array, model, batchsize: int = 20) -> np.array:
-    """Split image to 128x128 parts and run U-net for every part."""
+def process_with_robin(
+    img: np.array, model: keras_model, batchsize: int = 2
+) -> np.array:
+    """Split image to 128x128 parts and run U-net for every part.
+
+    Parameters
+    ----------
+    img: np.array
+        image array to preprocess
+    model: keras_model
+        keras model
+    batchsize: int
+        batchsize to use with the model (default is 2)
+
+    Returns
+    -------
+    np.array
+        image array after preprocessing
+
+    See Also
+    --------
+    add_border(), normalize_in(), split_img(), combine_imgs()
+
+    Example
+    -------
+    robin.img_preprocessing.process_with_robin(process_unet_img, model)
+
+    """
     img, border_y, border_x = add_border(img)
     img = normalize_in(img)
     parts = split_img(img)
@@ -125,29 +271,61 @@ def process_unet_img(img: np.array, model, batchsize: int = 20) -> np.array:
         tmp.append(part)
     parts = tmp
     img = combine_imgs(parts, img.shape[0], img.shape[1])
-    img = img[
-        border_y: img.shape[0] - border_y,
-        border_x: img.shape[1] - border_x]
+    img = img[border_y : img.shape[0] - border_y, border_x : img.shape[1] - border_x]
     img = img * 255.0
     img = img.astype(np.uint8)
     return img
 
 
 def postprocess_img(img: np.array) -> np.array:
-    """Apply Otsu threshold to image."""
+    """Apply Otsu threshold to image.
+
+    Parameters
+    ----------
+    img: np.array
+        image array to postprocess
+
+    Returns
+    -------
+    np.array
+        postprocessed image array
+
+    Example
+    -------
+    robin.img_preprocessing.postprocess_img(img_array)
+
+    """
     _, img = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     return img
 
 
-def binarize_img(img: np.array, model, batchsize: int = 20) -> np.array:
-    """Binarize image, using U-net, Otsu, bottom-hat transform etc."""
+def binarize_img(img: np.array, model: keras_model, batchsize: int = 2) -> np.array:
+    """Binarize image, using U-net, Otsu, bottom-hat transform etc.
+
+    Parameters
+    ----------
+    img: np.array
+        image array to preprocess
+    model: keras_model
+        keras model
+    batchsize: int
+        batchsize to use with the model (default is 2)
+
+    Returns
+    -------
+    np.array
+        image array after binarizing
+
+    See Also
+    --------
+    preprocess_img(), process_with_robin(), postprocess_img()
+
+    Example
+    -------
+    robin.img_preprocessing.binarize_img(process_unet_img, model)
+
+    """
     img = preprocess_img(img)
-    img = process_unet_img(img, model, batchsize)
+    img = process_with_robin(img, model, batchsize)
     img = postprocess_img(img)
     return img
-
-
-def mkdir_s(path: str):
-    """Create directory in specified path, if not exists."""
-    if not os.path.exists(path):
-        os.makedirs(path)

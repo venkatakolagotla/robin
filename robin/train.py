@@ -4,7 +4,6 @@ import os
 import sys
 import time
 import random
-import argparse
 import numpy as np
 from copy import deepcopy
 
@@ -16,17 +15,12 @@ from Augmentor.Operations import Operation
 
 from keras import backend as K
 from keras.optimizers import Adam
-from keras.callbacks import TensorBoard, Callback
+from keras.callbacks import TensorBoard, Callback, EarlyStopping
 from keras.utils import multi_gpu_model, Sequence
 from alt_model_checkpoint import AltModelCheckpoint
 
 from .unet import unet
-from .img_processing import (
-    binarize_img,
-    mkdir_s,
-    normalize_gt,
-    normalize_in
-)
+from .img_processing import binarize_img, mkdir_s, normalize_gt, normalize_in
 
 
 class GaussianNoiseAugmentor(Operation):
@@ -113,13 +107,7 @@ class InvertPartAugmentor(Operation):
 class ParallelDataGenerator(Sequence):
     """Generate images for training/validation/testing (parallel version)."""
 
-    def __init__(
-        self,
-        fnames_in,
-        fnames_gt,
-        batch_size: int,
-        augmentate: bool
-    ):
+    def __init__(self, fnames_in, fnames_gt, batch_size: int, augmentate: bool):
         self.fnames_in = deepcopy(fnames_in)
         self.fnames_gt = deepcopy(fnames_gt)
         self.batch_size = batch_size
@@ -135,14 +123,12 @@ class ParallelDataGenerator(Sequence):
     def __apply_augmentation__(self, p):
         batch = []
         for i in range(0, len(p.augmentor_images)):
-            images_to_return = [PIL.Image.fromarray(x)
-                                for x in p.augmentor_images[i]]
+            images_to_return = [PIL.Image.fromarray(x) for x in p.augmentor_images[i]]
 
             for operation in p.operations:
                 r = round(random.uniform(0, 1), 1)
                 if r <= operation.probability:
-                    images_to_return = operation.perform_operation(
-                                                    images_to_return)
+                    images_to_return = operation.perform_operation(images_to_return)
 
             images_to_return = [np.asarray(x) for x in images_to_return]
             batch.append(images_to_return)
@@ -213,19 +199,9 @@ class ParallelDataGenerator(Sequence):
 
         # Normalization.
         imgs_in = np.array([normalize_in(img) for img in imgs_in])
-        imgs_in.shape = (
-            imgs_in.shape[0],
-            imgs_in.shape[1],
-            imgs_in.shape[2],
-            1
-            )
+        imgs_in.shape = (imgs_in.shape[0], imgs_in.shape[1], imgs_in.shape[2], 1)
         imgs_gt = np.array([normalize_gt(img) for img in imgs_gt])
-        imgs_gt.shape = (
-            imgs_gt.shape[0],
-            imgs_gt.shape[1],
-            imgs_gt.shape[2],
-            1
-            )
+        imgs_gt.shape = (imgs_gt.shape[0], imgs_gt.shape[1], imgs_gt.shape[2], 1)
 
         return imgs_in, imgs_gt
 
@@ -247,10 +223,7 @@ class Visualisation(Callback):
         self.epoch_number = 0
         self.fnames = os.listdir(self.dir_name)
         for fname in self.fnames:
-            mkdir_s(os.path.join(
-                self.dir_name,
-                fname[: fname.rfind(".")] + "_frames")
-                )
+            mkdir_s(os.path.join(self.dir_name, fname[: fname.rfind(".")] + "_frames"))
         self.monitor = monitor
         self.save_best_epochs_only = save_best_epochs_only
         self.mode = mode
@@ -261,9 +234,7 @@ class Visualisation(Callback):
             frames = []
             for frame_name in sorted(
                 os.listdir(
-                    os.path.join(
-                        self.dir_name,
-                        fname[: fname.rfind(".")] + "_frames")
+                    os.path.join(self.dir_name, fname[: fname.rfind(".")] + "_frames")
                 )
             ):
                 frames.append(
@@ -276,9 +247,7 @@ class Visualisation(Callback):
                     )
                 )
             imageio.mimsave(
-                os.path.join(
-                    self.dir_name,
-                    fname[: fname.rfind(".")] + ".gif"),
+                os.path.join(self.dir_name, fname[: fname.rfind(".")] + ".gif"),
                 frames,
                 format="GIF",
                 duration=0.5,
@@ -310,18 +279,47 @@ class Visualisation(Callback):
                 )
 
 
-def create_callbacks(model, original_model, args):
-    """Create Keras callbacks for training."""
+def create_callbacks(
+    model: K.Model,
+    original_model: K.Model,
+    debug: str,
+    num_gpus: int,
+    augmentate: bool,
+    batchsize: int,
+    vis: str,
+    weights_path: str,
+) -> list:
+    """Create Keras callbacks for training.
+
+    Parameters
+    ----------
+    model: K.Model
+        keras model
+    original_model: K.Model
+        model to use when num_gpus > 1
+
+    Returns
+    -------
+    list
+        list of callbacks tu use in training.
+
+    See Also
+    --------
+    main()
+
+    Example
+    -------
+    robin.train.create_callbacks(model, gpu_model)
+
+    """
     callbacks = []
 
     # Model checkpoint.
-    if args.gpus == 1:
+    if num_gpus == 1:
         model_checkpoint = AltModelCheckpoint(
-            args.weights
-            if args.debug == ""
-            else os.path.join(
-                args.debug, "weights", "weights-improvement-{epoch:02d}.hdf5"
-            ),
+            weights_path
+            if debug == ""
+            else os.path.join(debug, "weights", "weights-improvement-{epoch:02d}.hdf5"),
             model,
             monitor="val_dice_coef",
             mode="max",
@@ -331,11 +329,9 @@ def create_callbacks(model, original_model, args):
         )
     else:
         model_checkpoint = AltModelCheckpoint(
-            args.weights
-            if args.debug == ""
-            else os.path.join(
-                args.debug, "weights", "weights-improvement-{epoch:02d}.hdf5"
-            ),
+            weights_path
+            if debug == ""
+            else os.path.join(debug, "weights", "weights-improvement-{epoch:02d}.hdf5"),
             original_model,
             monitor="val_dice_coef",
             mode="max",
@@ -346,22 +342,18 @@ def create_callbacks(model, original_model, args):
     callbacks.append(model_checkpoint)
 
     # Early stopping.
-    # model_early_stopping = EarlyStopping(
-    #     monitor='val_dice_coef',
-    #     min_delta=0.001,
-    #     patience=20,
-    #     verbose=1,
-    #     mode='max'
-    #     )
-    # callbacks.append(model_early_stopping)
+    model_early_stopping = EarlyStopping(
+        monitor="val_dice_coef", min_delta=0.001, patience=20, verbose=1, mode="max"
+    )
+    callbacks.append(model_early_stopping)
 
     # Tensorboard logs.
-    if args.debug != "":
-        mkdir_s(args.debug)
-        mkdir_s(os.path.join(args.debug, "weights"))
-        mkdir_s(os.path.join(args.debug, "logs"))
+    if debug != "":
+        mkdir_s(debug)
+        mkdir_s(os.path.join(debug, "weights"))
+        mkdir_s(os.path.join(debug, "logs"))
         model_tensorboard = TensorBoard(
-            log_dir=os.path.join(args.debug, "logs"),
+            log_dir=os.path.join(debug, "logs"),
             histogram_freq=0,
             write_graph=True,
             write_images=True,
@@ -369,10 +361,10 @@ def create_callbacks(model, original_model, args):
         callbacks.append(model_tensorboard)
 
     # Training visualisation.
-    if args.vis != "":
+    if vis != "":
         model_visualisation = Visualisation(
-            dir_name=args.vis,
-            batchsize=args.batchsize,
+            dir_name=vis,
+            batchsize=batchsize,
             monitor="val_dice_coef",
             save_best_epochs_only=True,
             mode="max",
@@ -382,24 +374,80 @@ def create_callbacks(model, original_model, args):
     return callbacks
 
 
-def dice_coef(y_true, y_pred):
-    """Count Sorensen-Dice coefficient for output and ground-truth image."""
+def dice_coef(y_true: K.Model, y_pred: K.Model) -> float:
+    """Count Sorensen-Dice coefficient for output and ground-truth image.
+
+    Parameters
+    ----------
+    y_true: K.Model
+        trained keras model
+    y_pred: K.Model
+        trained multi gpu model
+
+    Returns
+    -------
+    float
+        dice coefficient calculated on predicted and input class values.
+
+    Example
+    -------
+    robin.train.dice_coef(y_true, y_pred)
+
+    """
     y_true_f = K.flatten(y_true)
     y_pred_f = K.flatten(y_pred)
     intersection = K.sum(y_true_f * y_pred_f)
-    dice = (2.0 * intersection + 1.0) / (
-        K.sum(y_true_f) +
-        K.sum(y_pred_f) + 1.0)
+    dice = (2.0 * intersection + 1.0) / (K.sum(y_true_f) + K.sum(y_pred_f) + 1.0)
     return dice
 
 
 def dice_coef_loss(y_true, y_pred):
-    """loss of Sorensen-Dice coefficient for output and ground-truth image."""
+    """loss of Sorensen-Dice coefficient for output and ground-truth image.
+
+    Parameters
+    ----------
+    y_true: K.Model
+        trained keras model
+    y_pred: K.Model
+        trained multi gpu model
+
+    Returns
+    -------
+    float
+        dice loss calculated from dice coefficient.
+
+    See Also
+    --------
+    dice_coef()
+
+    Example
+    -------
+    robin.train.dice_coef_loss(y_true, y_pred)
+
+    """
     return 1 - dice_coef(y_true, y_pred)
 
 
 def jacard_coef(y_true, y_pred):
-    """Count Jaccard coefficient for output and ground-truth image."""
+    """Count Jaccard coefficient for output and ground-truth image.
+
+    Parameters
+    ----------
+    y_true: K.Model
+        trained keras model
+    y_pred: K.Model
+        trained multi gpu model
+
+    Returns
+    -------
+    float
+        Jaccard coefficient calculated on predicted and input class values.
+
+    Example
+    -------
+    robin.train.jacard_coef(y_true, y_pred)
+
+    """
     y_true_f = K.flatten(y_true)
     y_pred_f = K.flatten(y_pred)
     intersection = K.sum(y_true_f * y_pred_f)
@@ -409,188 +457,148 @@ def jacard_coef(y_true, y_pred):
 
 
 def jacard_coef_loss(y_true, y_pred):
-    """Count loss of Jaccard coefficient for output and ground-truth image."""
+    """Count loss of Jaccard coefficient for output and ground-truth image.
+
+    Parameters
+    ----------
+    y_true: K.Model
+        trained keras model
+    y_pred: K.Model
+        trained multi gpu model
+
+    Returns
+    -------
+    float
+        Jaccard loss calculated from Jaccard coefficient.
+
+    See Also
+    --------
+    jacard_coef()
+
+    Example
+    -------
+    robin.train.jacard_coef_loss(y_true, y_pred)
+
+    """
     return 1 - jacard_coef(y_true, y_pred)
 
 
-desc_str = r"""Train U-net with pairs of train and ground-truth images.
+def main(
+    input: str = os.path.join(".", "input"),
+    vis: str = os.path.join(".", "vis"),
+    debug: str = os.path.join(".", "train_logs"),
+    epochs: int = 1,
+    batchsize: int = 20,
+    augmentate: bool = True,
+    train_split: int = 80,
+    val_split: int = 80,
+    test_split: int = 80,
+    weights_path: str = os.path.join(".", "bin_weights.hdf5"),
+    num_gpus: int = 1,
+    extraprocesses: int = 0,
+    queuesize: int = 10,
+):
+    """Train U-net with pairs of train and ground-truth images.
 
-All train images should be in "in" directory.
-All ground-truth images should be in "gt" directory.
+    Parameters
+    ----------
+    input: str
+        input dir with in and gt sub folders to train
+        (default is os.path.join(".", "input")).
+    vis: str
+        dir with image to use for train visualization
+        (default is os.path.join(".", "vis")).
+    debug: str
+        path to save training logs
+        (default is os.path.join(".", "train_logs")).
+    epochs: int
+        number of epocs to train robin (default is 1).
+    batchsize: int
+        batchsize to train robin (default is 20).
+    augmentate: bool
+        argumentate the original images for training robin
+        (default is True)
+    train_split: int
+        train dataset split percentage (default is 80).
+    val_split: int
+        validation dataset split percentage (default is 10).
+    test_split: int
+        train dataset split percentage (default is 10).
+    weights_path: str
+        path to save final weights
+        (default is os.path.join(".", "bin_weights.hdf5")).
+    num_gpus: int
+        number of gpus to use for training robin (default is 1)
+    extraprocesses: int
+        number of extraprocesses to use (default is 0).
+    queuesize: int
+        number of batches to generate in queue while training
+        (default is 10).
 
-"""
+    Retunrs
+    -------
+    None
 
+    Notes
+    -----
+    All train images should be in "in" directory.
+    All ground-truth images should be in "gt" directory.
 
-def parse_args():
-    parser = argparse.ArgumentParser(
-        prog="train",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        description=desc_str,
-    )
-    parser.add_argument(
-        "-v",
-        "--version",
-        action="version",
-        version="%(prog)s v0.1"
-        )
+    Example
+    -------
+    robin.train.main(input, vis, logs_dir, 2, 4)
 
-    # Main training settings.
-    parser.add_argument(
-        "-e",
-        "--epochs",
-        type=int,
-        default=1,
-        help=r"number of training epochs (default: %(default)s)",
-    )
-    parser.add_argument(
-        "-b",
-        "--batchsize",
-        type=int,
-        default=20,
-        help=r"number of images sent to the GPU (default: %(default)s)",
-    )
-    parser.add_argument(
-        "-a",
-        "--augmentate",
-        action="store_true",
-        help=r"use Keras data augmentation"
-    )
+    """
+    assert epochs > 0
+    assert batchsize > 0
 
-    # training/validation/testing percents.
-    parser.add_argument(
-        "--train",
-        type=int,
-        default=80,
-        help=r"%% of train images (default: %(default)s%%)",
-    )
-    parser.add_argument(
-        "--val",
-        type=int,
-        default=10,
-        help=r"%% of validation images (default: %(default)s%%)",
-    )
-    parser.add_argument(
-        "--test",
-        type=int,
-        default=10,
-        help=r"%% of test images (default: %(default)s%%)",
-    )
+    assert train_split >= 0
+    assert val_split >= 0
+    assert test_split >= 0
 
-    # paths.
-    parser.add_argument(
-        "-i",
-        "--input",
-        type=str,
-        default=os.path.join(".", "input"),
-        help=r'directory with input and gt images (default: "%(default)s")',
-    )
-    parser.add_argument(
-        "-w",
-        "--weights",
-        type=str,
-        default=os.path.join(".", "bin_weights.hdf5"),
-        help=r'output U-net weights file (default: "%(default)s")',
-    )
+    assert num_gpus >= 1
+    assert extraprocesses >= 0
+    assert queuesize >= 0
 
-    # Additional callbacks.
-    parser.add_argument(
-        "-d",
-        "--debug",
-        type=str,
-        default="",
-        help=r"directory to save tensorboard logs and weights history",
-    )
-    parser.add_argument(
-        "--vis",
-        type=str,
-        default="",
-        help=r"directory with images for training visualisation",
-    )
-
-    # Hardware.
-    parser.add_argument(
-        "-g",
-        "--gpus",
-        type=int,
-        default=1,
-        help=r"number of GPUs for training (default: %(default)s)",
-    )
-    parser.add_argument(
-        "-p",
-        "--extraprocesses",
-        type=int,
-        default=0,
-        help=r"number of extra processes for data augmentation (default: 0)",
-    )
-    parser.add_argument(
-        "-q",
-        "--queuesize",
-        type=int,
-        default=10,
-        help=r"max size of training queue (default: %(default)s)",
-    )
-
-    args = parser.parse_args()
-
-    assert args.epochs > 0
-    assert args.batchsize > 0
-
-    assert args.train >= 0
-    assert args.val >= 0
-    assert args.test >= 0
-
-    assert args.gpus >= 1
-    assert args.extraprocesses >= 0
-    assert args.queuesize >= 0
-
-    return args
-
-
-def main():
     start_time = time.time()
-    args = parse_args()
     np.random.seed()
 
     # Creating data for training, validation and testing.
     fnames_in = [
-        os.path.join(args.input, "in", str(i) + "_in.png")
-        for i in range(len(os.listdir(os.path.join(args.input, "in"))))
+        os.path.join(input, "in", str(i) + "_in.png")
+        for i in range(len(os.listdir(os.path.join(input, "in"))))
     ]
     fnames_gt = [
-        os.path.join(args.input, "gt", str(i) + "_gt.png")
-        for i in range(len(os.listdir(os.path.join(args.input, "gt"))))
+        os.path.join(input, "gt", str(i) + "_gt.png")
+        for i in range(len(os.listdir(os.path.join(input, "gt"))))
     ]
     assert len(fnames_in) == len(fnames_gt)
     n = len(fnames_in)
 
     train_start = 0
 
-    train_stop = int(n * (args.train / 100))
+    train_stop = int(n * (train_split / 100))
     train_in = fnames_in[train_start:train_stop]
     train_gt = fnames_gt[train_start:train_stop]
-    train_generator = ParallelDataGenerator(
-        train_in, train_gt, args.batchsize, args.augmentate
-    )
+    train_generator = ParallelDataGenerator(train_in, train_gt, batchsize, augmentate)
 
     validation_start = train_stop
-    validation_stop = validation_start + int(n * (args.val / 100))
+    validation_stop = validation_start + int(n * (val_split / 100))
     validation_in = fnames_in[validation_start:validation_stop]
     validation_gt = fnames_gt[validation_start:validation_stop]
     validation_generator = ParallelDataGenerator(
-        validation_in, validation_gt, args.batchsize, args.augmentate
+        validation_in, validation_gt, batchsize, augmentate
     )
 
     test_start = validation_stop
     test_stop = n
     test_in = fnames_in[test_start:test_stop]
     test_gt = fnames_gt[test_start:test_stop]
-    test_generator = ParallelDataGenerator(
-        test_in, test_gt, args.batchsize, args.augmentate
-    )
+    test_generator = ParallelDataGenerator(test_in, test_gt, batchsize, augmentate)
 
     # Creating model.
     original_model = unet()
-    if args.gpus == 1:
+    if num_gpus == 1:
         model = original_model
         model.compile(
             optimizer=Adam(lr=1e-4),
@@ -598,16 +606,18 @@ def main():
             metrics=[dice_coef, jacard_coef, "accuracy"],
         )
     else:
-        model = multi_gpu_model(original_model, gpus=args.gpus)
+        model = multi_gpu_model(original_model, gpus=num_gpus)
         model.compile(
             optimizer=Adam(lr=1e-4),
             loss=dice_coef_loss,
             metrics=[dice_coef, jacard_coef, "accuracy"],
         )
-    callbacks = create_callbacks(model, original_model, args)
+    callbacks = create_callbacks(
+        model, original_model, debug, num_gpus, augmentate, batchsize, vis, weights_path
+    )
 
     # Running training, validation and testing.
-    if args.extraprocesses == 0:
+    if extraprocesses == 0:
         model.fit_generator(
             generator=train_generator,
             steps_per_epoch=train_generator.__len__(),
@@ -615,19 +625,19 @@ def main():
             validation_data=validation_generator,
             validation_steps=validation_generator.__len__(),
             # Compatibility with old Keras versions.
-            epochs=args.epochs,
+            epochs=epochs,
             shuffle=True,
             callbacks=callbacks,
             use_multiprocessing=False,
             workers=0,
-            max_queue_size=args.queuesize,
+            max_queue_size=queuesize,
             verbose=1,
         )
         metrics = model.evaluate_generator(
             generator=test_generator,
             use_multiprocessing=False,
             workers=0,
-            max_queue_size=args.queuesize,
+            max_queue_size=queuesize,
             verbose=1,
         )
     else:
@@ -638,19 +648,19 @@ def main():
             validation_data=validation_generator,
             validation_steps=validation_generator.__len__(),
             # Compatibility with old Keras versions.
-            epochs=args.epochs,
+            epochs=epochs,
             shuffle=True,
             callbacks=callbacks,
             use_multiprocessing=True,
-            workers=args.extraprocesses,
-            max_queue_size=args.queuesize,
+            workers=extraprocesses,
+            max_queue_size=queuesize,
             verbose=1,
         )
         metrics = model.evaluate_generator(
             generator=test_generator,
             use_multiprocessing=True,
-            workers=args.extraprocesses,
-            max_queue_size=args.queuesize,
+            workers=extraprocesses,
+            max_queue_size=queuesize,
             verbose=1,
         )
 
@@ -662,8 +672,8 @@ def main():
     print("test_accuracy:   {0:.4f}".format(metrics[3]))
 
     # Saving model.
-    if args.debug != "":
-        model.save_weights(args.weights)
+    if debug != "":
+        model.save_weights(weights_path)
     print("finished in {0:.2f} seconds".format(time.time() - start_time))
     # Sometimes script freezes.
     sys.exit(0)
