@@ -1,24 +1,24 @@
 #!/usr/bin/python3
 
-import argparse
-import random
-import sys
 import os
+import sys
 import time
-import cv2
+import random
+import argparse
 import numpy as np
 from copy import deepcopy
 
-import Augmentor
+import cv2
 import PIL
 import imageio
+from Augmentor import DataPipeline
 from Augmentor.Operations import Operation
-from PIL import Image
-from alt_model_checkpoint import AltModelCheckpoint
+
 from keras import backend as K
-from keras.callbacks import TensorBoard, Callback
 from keras.optimizers import Adam
+from keras.callbacks import TensorBoard, Callback
 from keras.utils import multi_gpu_model, Sequence
+from alt_model_checkpoint import AltModelCheckpoint
 
 from model.unet import unet
 from utils.img_processing import (
@@ -135,7 +135,7 @@ class ParallelDataGenerator(Sequence):
     def __apply_augmentation__(self, p):
         batch = []
         for i in range(0, len(p.augmentor_images)):
-            images_to_return = [Image.fromarray(x)
+            images_to_return = [PIL.Image.fromarray(x)
                                 for x in p.augmentor_images[i]]
 
             for operation in p.operations:
@@ -153,7 +153,7 @@ class ParallelDataGenerator(Sequence):
 
         # Non-Linear transformations.
         imgs = [[imgs_in[i], imgs_gt[i]] for i in range(len(imgs_in))]
-        p = Augmentor.DataPipeline(imgs)
+        p = DataPipeline(imgs)
         p.random_distortion(0.5, 6, 6, 4)
         # Linear transformations.
         # p.rotate(0.75, 15, 15)
@@ -165,7 +165,7 @@ class ParallelDataGenerator(Sequence):
         imgs_gt = [p[1] for p in imgs]
 
         # Noise transformations.
-        p = Augmentor.DataPipeline([[img] for img in imgs_in])
+        p = DataPipeline([[img] for img in imgs_in])
         gaussian_noise = GaussianNoiseAugmentor(0.25, 0, 10)
         p.add_operation(gaussian_noise)
         salt_pepper_noise = SaltPepperNoiseAugmentor(0.25, 0.005)

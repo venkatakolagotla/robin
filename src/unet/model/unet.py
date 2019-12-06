@@ -1,8 +1,10 @@
-from keras.layers import Input, Conv2D, MaxPooling2D, UpSampling2D
-from keras.layers.core import SpatialDropout2D, Activation
+#!/usr/bin/python3
+
+from keras.models import Model
 from keras.layers.merge import concatenate
 from keras.layers.normalization import BatchNormalization
-from keras.models import Model
+from keras.layers.core import SpatialDropout2D, Activation
+from keras.layers import Input, Conv2D, MaxPooling2D, UpSampling2D
 
 
 def double_conv_layer(inputs, filter):

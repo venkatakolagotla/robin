@@ -1,15 +1,14 @@
 #!/usr/bin/python3
 
-import argparse
-import glob
 import os
-import time
-from functools import partial
-from multiprocessing import Pool, cpu_count
-from shutil import copy2, rmtree
-
 import cv2
+import time
+import glob
+import argparse
 import numpy as np
+from functools import partial
+from shutil import copy2, rmtree
+from multiprocessing import Pool, cpu_count
 
 
 def split_img_overlay(
