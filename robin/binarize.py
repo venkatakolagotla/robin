@@ -14,10 +14,16 @@ from .train import dice_coef, dice_coef_loss
 from .img_processing import binarize_img, mkdir_s
 
 
+weight_path = os.path.realpath(__file__)
+weight_path = weight_path.replace(
+    "robin/binarize.py",
+    "weights/bin_weights.hdf5")
+
+
 def main(
     input: str = os.path.join(".", "input"),
     output: str = os.path.join(".", "output"),
-    weights_path: str = os.path.join(".", "bin_weights.hdf5"),
+    weights_path: str = weight_path,
     batchsize: int = 2,
 ) -> None:
     """Binarize images from input directory and
@@ -48,14 +54,21 @@ def main(
     robin.binarize.main('input_path', 'output_path', 'best_weights.hdf5', 2)
 
     """
-    assert (batchsize > 0) and isinstance(batchsize, int)
+    try:
+        assert (batchsize > 0) and isinstance(batchsize, int)
+    except Exception:
+        print("batchsize should be > 0 and int but given {}".format(batchsize))
+    try:
+        assert (os.path.isdir(input))
+    except Exception:
+        print("Input path is not valid")
 
     start_time = time.time()
 
     fnames_in = list(glob.iglob(os.path.join(
         input,
         "**",
-        "*_in.*"), recursive=True))
+        "*.png*"), recursive=True))
     model = None
     if len(fnames_in) != 0:
         mkdir_s(output)
@@ -66,12 +79,13 @@ def main(
             metrics=[dice_coef])
         model.load_weights(weights_path)
     for fname in fnames_in:
+        print("binarizing -> {0}".format(fname))
         img = cv2.imread(fname, cv2.IMREAD_GRAYSCALE).astype(np.float32)
         img = binarize_img(img, model, batchsize)
         cv2.imwrite(
             os.path.join(
                 output,
-                os.path.split(fname)[-1].replace("_in", "_out")),
+                os.path.split(fname)[-1].replace(".png", "_bin.png")),
             img
         )
     print("finished in {0:.2f} seconds".format(time.time() - start_time))
