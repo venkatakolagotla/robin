@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 from keras.models import Model
-from keras.layer import Layer as keras_layer
+from keras import layers as keras_layer
 from keras.layers.merge import concatenate
 from keras.layers.normalization import BatchNormalization
 from keras.layers.core import SpatialDropout2D, Activation
