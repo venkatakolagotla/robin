@@ -4,12 +4,12 @@ import os
 import sys
 import time
 import random
-import numpy as np
 from copy import deepcopy
 
 import cv2
 import PIL
 import imageio
+import numpy as np
 from Augmentor import DataPipeline
 from Augmentor.Operations import Operation
 
@@ -107,7 +107,13 @@ class InvertPartAugmentor(Operation):
 class ParallelDataGenerator(Sequence):
     """Generate images for training/validation/testing (parallel version)."""
 
-    def __init__(self, fnames_in, fnames_gt, batch_size: int, augmentate: bool):
+    def __init__(
+        self,
+        fnames_in,
+        fnames_gt,
+        batch_size: int,
+        augmentate: bool
+    ):
         self.fnames_in = deepcopy(fnames_in)
         self.fnames_gt = deepcopy(fnames_gt)
         self.batch_size = batch_size
@@ -123,12 +129,16 @@ class ParallelDataGenerator(Sequence):
     def __apply_augmentation__(self, p):
         batch = []
         for i in range(0, len(p.augmentor_images)):
-            images_to_return = [PIL.Image.fromarray(x) for x in p.augmentor_images[i]]
+            images_to_return = [
+                PIL.Image.fromarray(x) for x in p.augmentor_images[i]
+                ]
 
             for operation in p.operations:
                 r = round(random.uniform(0, 1), 1)
                 if r <= operation.probability:
-                    images_to_return = operation.perform_operation(images_to_return)
+                    images_to_return = operation.perform_operation(
+                        images_to_return
+                        )
 
             images_to_return = [np.asarray(x) for x in images_to_return]
             batch.append(images_to_return)
@@ -199,9 +209,19 @@ class ParallelDataGenerator(Sequence):
 
         # Normalization.
         imgs_in = np.array([normalize_in(img) for img in imgs_in])
-        imgs_in.shape = (imgs_in.shape[0], imgs_in.shape[1], imgs_in.shape[2], 1)
+        imgs_in.shape = (
+            imgs_in.shape[0],
+            imgs_in.shape[1],
+            imgs_in.shape[2],
+            1
+            )
         imgs_gt = np.array([normalize_gt(img) for img in imgs_gt])
-        imgs_gt.shape = (imgs_gt.shape[0], imgs_gt.shape[1], imgs_gt.shape[2], 1)
+        imgs_gt.shape = (
+            imgs_gt.shape[0],
+            imgs_gt.shape[1],
+            imgs_gt.shape[2],
+            1
+            )
 
         return imgs_in, imgs_gt
 
@@ -223,7 +243,11 @@ class Visualisation(Callback):
         self.epoch_number = 0
         self.fnames = os.listdir(self.dir_name)
         for fname in self.fnames:
-            mkdir_s(os.path.join(self.dir_name, fname[: fname.rfind(".")] + "_frames"))
+            mkdir_s(
+                os.path.join(
+                    self.dir_name,
+                    fname[: fname.rfind(".")] + "_frames")
+                    )
         self.monitor = monitor
         self.save_best_epochs_only = save_best_epochs_only
         self.mode = mode
@@ -234,7 +258,9 @@ class Visualisation(Callback):
             frames = []
             for frame_name in sorted(
                 os.listdir(
-                    os.path.join(self.dir_name, fname[: fname.rfind(".")] + "_frames")
+                    os.path.join(
+                        self.dir_name,
+                        fname[: fname.rfind(".")] + "_frames")
                 )
             ):
                 frames.append(
@@ -247,7 +273,9 @@ class Visualisation(Callback):
                     )
                 )
             imageio.mimsave(
-                os.path.join(self.dir_name, fname[: fname.rfind(".")] + ".gif"),
+                os.path.join(
+                    self.dir_name,
+                    fname[: fname.rfind(".")] + ".gif"),
                 frames,
                 format="GIF",
                 duration=0.5,
@@ -319,7 +347,10 @@ def create_callbacks(
         model_checkpoint = AltModelCheckpoint(
             weights_path
             if debug == ""
-            else os.path.join(debug, "weights", "weights-improvement-{epoch:02d}.hdf5"),
+            else os.path.join(
+                debug,
+                "weights",
+                "weights-improvement-{epoch:02d}.hdf5"),
             model,
             monitor="val_dice_coef",
             mode="max",
@@ -331,7 +362,10 @@ def create_callbacks(
         model_checkpoint = AltModelCheckpoint(
             weights_path
             if debug == ""
-            else os.path.join(debug, "weights", "weights-improvement-{epoch:02d}.hdf5"),
+            else os.path.join(
+                debug,
+                "weights",
+                "weights-improvement-{epoch:02d}.hdf5"),
             original_model,
             monitor="val_dice_coef",
             mode="max",
@@ -343,7 +377,11 @@ def create_callbacks(
 
     # Early stopping.
     model_early_stopping = EarlyStopping(
-        monitor="val_dice_coef", min_delta=0.001, patience=20, verbose=1, mode="max"
+        monitor="val_dice_coef",
+        min_delta=0.001,
+        patience=20,
+        verbose=1,
+        mode="max"
     )
     callbacks.append(model_early_stopping)
 
@@ -397,7 +435,10 @@ def dice_coef(y_true: K.Model, y_pred: K.Model) -> float:
     y_true_f = K.flatten(y_true)
     y_pred_f = K.flatten(y_pred)
     intersection = K.sum(y_true_f * y_pred_f)
-    dice = (2.0 * intersection + 1.0) / (K.sum(y_true_f) + K.sum(y_pred_f) + 1.0)
+    dice = (2.0 * intersection + 1.0) / (
+        K.sum(y_true_f)
+        + K.sum(y_pred_f)
+        + 1.0)
     return dice
 
 
@@ -580,7 +621,12 @@ def main(
     train_stop = int(n * (train_split / 100))
     train_in = fnames_in[train_start:train_stop]
     train_gt = fnames_gt[train_start:train_stop]
-    train_generator = ParallelDataGenerator(train_in, train_gt, batchsize, augmentate)
+    train_generator = ParallelDataGenerator(
+        train_in,
+        train_gt,
+        batchsize,
+        augmentate
+        )
 
     validation_start = train_stop
     validation_stop = validation_start + int(n * (val_split / 100))
@@ -594,7 +640,12 @@ def main(
     test_stop = n
     test_in = fnames_in[test_start:test_stop]
     test_gt = fnames_gt[test_start:test_stop]
-    test_generator = ParallelDataGenerator(test_in, test_gt, batchsize, augmentate)
+    test_generator = ParallelDataGenerator(
+        test_in,
+        test_gt,
+        batchsize,
+        augmentate
+        )
 
     # Creating model.
     original_model = unet()
@@ -613,7 +664,14 @@ def main(
             metrics=[dice_coef, jacard_coef, "accuracy"],
         )
     callbacks = create_callbacks(
-        model, original_model, debug, num_gpus, augmentate, batchsize, vis, weights_path
+        model,
+        original_model,
+        debug,
+        num_gpus,
+        augmentate,
+        batchsize,
+        vis,
+        weights_path
     )
 
     # Running training, validation and testing.

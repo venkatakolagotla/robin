@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import os
+
 import cv2
 import numpy as np
 
@@ -108,18 +109,34 @@ def add_border(
     if max_y % size_y != 0:
         border_y = (size_y - (max_y % size_y) + 1) // 2
         img = cv2.copyMakeBorder(
-            img, border_y, border_y, 0, 0, cv2.BORDER_CONSTANT, value=[255, 255, 255]
+            img,
+            border_y,
+            border_y,
+            0,
+            0,
+            cv2.BORDER_CONSTANT,
+            value=[255, 255, 255]
         )
     border_x = 0
     if max_x % size_x != 0:
         border_x = (size_x - (max_x % size_x) + 1) // 2
         img = cv2.copyMakeBorder(
-            img, 0, 0, border_x, border_x, cv2.BORDER_CONSTANT, value=[255, 255, 255]
+            img,
+            0,
+            0,
+            border_x,
+            border_x,
+            cv2.BORDER_CONSTANT,
+            value=[255, 255, 255]
         )
     return img, border_y, border_x
 
 
-def split_img(img: np.array, size_x: int = 128, size_y: int = 128) -> [np.array]:
+def split_img(
+    img: np.array,
+    size_x: int = 128,
+    size_y: int = 128
+) -> [np.array]:
     """Split image to parts (little images).
 
     Parameters
@@ -154,7 +171,9 @@ def split_img(img: np.array, size_x: int = 128, size_y: int = 128) -> [np.array]
     while (curr_y + size_y) <= max_y:
         curr_x = 0
         while (curr_x + size_x) <= max_x:
-            parts.append(img[curr_y : curr_y + size_y, curr_x : curr_x + size_x])
+            parts.append(
+                img[curr_y: curr_y + size_y, curr_x: curr_x + size_x]
+            )
             curr_x += size_x
         curr_y += size_y
     return parts
@@ -200,7 +219,7 @@ def combine_imgs(imgs: [np.array], max_y: int, max_x: int) -> np.array:
         curr_x = 0
         while (curr_x + size_x) <= max_x:
             try:
-                img[curr_y : curr_y + size_y, curr_x : curr_x + size_x] = imgs[i]
+                img[curr_y: curr_y + size_y, curr_x: curr_x + size_x] = imgs[i]
             except Exception:
                 i -= 1
             i += 1
@@ -271,7 +290,10 @@ def process_with_robin(
         tmp.append(part)
     parts = tmp
     img = combine_imgs(parts, img.shape[0], img.shape[1])
-    img = img[border_y : img.shape[0] - border_y, border_x : img.shape[1] - border_x]
+    img = img[
+        border_y: img.shape[0] - border_y,
+        border_x: img.shape[1] - border_x
+        ]
     img = img * 255.0
     img = img.astype(np.uint8)
     return img
@@ -299,7 +321,11 @@ def postprocess_img(img: np.array) -> np.array:
     return img
 
 
-def binarize_img(img: np.array, model: keras_model, batchsize: int = 2) -> np.array:
+def binarize_img(
+    img: np.array,
+    model: keras_model,
+    batchsize: int = 2
+) -> np.array:
     """Binarize image, using U-net, Otsu, bottom-hat transform etc.
 
     Parameters

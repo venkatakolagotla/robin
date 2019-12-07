@@ -1,9 +1,10 @@
 #!/usr/bin/python3
 
 import os
-import cv2
 import glob
 import time
+
+import cv2
 import numpy as np
 
 from keras.optimizers import Adam
@@ -51,18 +52,27 @@ def main(
 
     start_time = time.time()
 
-    fnames_in = list(glob.iglob(os.path.join(input, "**", "*_in.*"), recursive=True))
+    fnames_in = list(glob.iglob(os.path.join(
+        input,
+        "**",
+        "*_in.*"), recursive=True))
     model = None
     if len(fnames_in) != 0:
         mkdir_s(output)
         model = unet()
-        model.compile(optimizer=Adam(lr=1e-4), loss=dice_coef_loss, metrics=[dice_coef])
+        model.compile(
+            optimizer=Adam(lr=1e-4),
+            loss=dice_coef_loss,
+            metrics=[dice_coef])
         model.load_weights(weights_path)
     for fname in fnames_in:
         img = cv2.imread(fname, cv2.IMREAD_GRAYSCALE).astype(np.float32)
         img = binarize_img(img, model, batchsize)
         cv2.imwrite(
-            os.path.join(output, os.path.split(fname)[-1].replace("_in", "_out")), img
+            os.path.join(
+                output,
+                os.path.split(fname)[-1].replace("_in", "_out")),
+            img
         )
     print("finished in {0:.2f} seconds".format(time.time() - start_time))
 
