@@ -14,8 +14,8 @@ from .train import dice_coef, dice_coef_loss
 from .img_processing import binarize_img, mkdir_s
 
 
-weight_path = os.path.realpath(__file__)
-weight_path = weight_path.replace(
+weights_path = os.path.realpath(__file__)
+weights_path = weights_path.replace(
     "robin/binarize.py",
     "weights/bin_weights.hdf5")
 
@@ -23,9 +23,9 @@ weight_path = weight_path.replace(
 def main(
     input: str = os.path.join(".", "input"),
     output: str = os.path.join(".", "output"),
-    weights_path: str = weight_path,
+    weights_path: str = weights_path,
     batchsize: int = 2,
-) -> None:
+) -> [np.array]:
     """Binarize images from input directory and
     write them to output directory.
 
@@ -42,16 +42,17 @@ def main(
 
     Retuns
     ------
-    None
+    array_like
+        list of binary images in np.array format
 
     Notes
     -----
-    All input image names should end with "_in" like "1_in.png".
-    All output image names will end with "_out" like "1_out.png".
+    All input image names should be in png format "sample_1.png".
+    All output image names will end with "_bin" like "sample_1_bin.png".
 
     Example
     -------
-    robin.binarize.main('input_path', 'output_path', 'best_weights.hdf5', 2)
+    robin.binarize.main('input_path', 'output_path', 2)
 
     """
     try:
@@ -78,6 +79,9 @@ def main(
             loss=dice_coef_loss,
             metrics=[dice_coef])
         model.load_weights(weights_path)
+
+    bin_img_list = []
+
     for fname in fnames_in:
         print("binarizing -> {0}".format(fname))
         img = cv2.imread(fname, cv2.IMREAD_GRAYSCALE).astype(np.float32)
@@ -88,7 +92,9 @@ def main(
                 os.path.split(fname)[-1].replace(".png", "_bin.png")),
             img
         )
+        bin_img_list.append(img)
     print("finished in {0:.2f} seconds".format(time.time() - start_time))
+    return bin_img_list
 
 
 if __name__ == "__main__":
