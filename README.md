@@ -22,12 +22,12 @@
 
 **robin** requires [Python](https://www.python.org/) v3.5+ to run.
 
-Get **robin**, install the dependencies from requirements.txt, download datasets and weights, and now You are ready to binarize documents!
+Getting and installig **robin** is even more easier now with the following commands. Replace the dummy weight file with the real weight file with the same name and you are good to start binarizing some documents with robin!
 
 ```sh
-$ git clone https://github.com/masyagin1998/robin.git
+$ git clone https://github.com/venkatakolagotla/robin.git
 $ cd robin
-$ pip install -r requirements.txt
+$ python steup.py install
 ```
 ## HowTo
 
