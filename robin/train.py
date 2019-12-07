@@ -649,10 +649,8 @@ def main(
         )
 
     # check if validation steps are more than batch size or not
-    # assert (validation_generator.__len__() >= batchsize)
-    # assert (test_generator.__len__() >= batchsize)
-    print(validation_generator.__len__())
-    print(test_generator.__len__())
+    assert (validation_generator.__len__() >= batchsize)
+    assert (test_generator.__len__() >= batchsize)
 
     # Creating model.
     original_model = unet()
