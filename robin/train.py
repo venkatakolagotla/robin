@@ -530,11 +530,11 @@ def main(
     vis: str = os.path.join(".", "vis"),
     debug: str = os.path.join(".", "train_logs"),
     epochs: int = 1,
-    batchsize: int = 20,
+    batchsize: int = 32,
     augmentate: bool = True,
     train_split: int = 80,
-    val_split: int = 80,
-    test_split: int = 80,
+    val_split: int = 10,
+    test_split: int = 10,
     weights_path: str = os.path.join(".", "bin_weights.hdf5"),
     num_gpus: int = 1,
     extraprocesses: int = 0,
@@ -556,7 +556,7 @@ def main(
     epochs: int
         number of epocs to train robin (default is 1).
     batchsize: int
-        batchsize to train robin (default is 20).
+        batchsize to train robin (default is 32).
     augmentate: bool
         argumentate the original images for training robin
         (default is True)
@@ -648,6 +648,12 @@ def main(
         augmentate
         )
 
+    # check if validation steps are more than batch size or not
+    # assert (validation_generator.__len__() >= batchsize)
+    # assert (test_generator.__len__() >= batchsize)
+    print(validation_generator.__len__())
+    print(test_generator.__len__())
+
     # Creating model.
     original_model = unet()
     if num_gpus == 1:
@@ -657,6 +663,7 @@ def main(
             loss=dice_coef_loss,
             metrics=[dice_coef, jacard_coef, "accuracy"],
         )
+        model.summary()
     else:
         model = multi_gpu_model(original_model, gpus=num_gpus)
         model.compile(
@@ -664,6 +671,7 @@ def main(
             loss=dice_coef_loss,
             metrics=[dice_coef, jacard_coef, "accuracy"],
         )
+        model.summary()
     callbacks = create_callbacks(
         model,
         original_model,
