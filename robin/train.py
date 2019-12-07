@@ -15,6 +15,7 @@ from Augmentor.Operations import Operation
 
 from keras import backend as K
 from keras.optimizers import Adam
+from keras.models import Model as keras_model
 from keras.callbacks import TensorBoard, Callback, EarlyStopping
 from keras.utils import multi_gpu_model, Sequence
 from alt_model_checkpoint import AltModelCheckpoint
@@ -308,8 +309,8 @@ class Visualisation(Callback):
 
 
 def create_callbacks(
-    model: K.Model,
-    original_model: K.Model,
+    model: keras_model,
+    original_model: keras_model,
     debug: str,
     num_gpus: int,
     augmentate: bool,
@@ -321,9 +322,9 @@ def create_callbacks(
 
     Parameters
     ----------
-    model: K.Model
+    model: keras_model
         keras model
-    original_model: K.Model
+    original_model: keras_model
         model to use when num_gpus > 1
 
     Returns
@@ -412,14 +413,14 @@ def create_callbacks(
     return callbacks
 
 
-def dice_coef(y_true: K.Model, y_pred: K.Model) -> float:
+def dice_coef(y_true: keras_model, y_pred: keras_model) -> float:
     """Count Sorensen-Dice coefficient for output and ground-truth image.
 
     Parameters
     ----------
-    y_true: K.Model
+    y_true: keras_model
         trained keras model
-    y_pred: K.Model
+    y_pred: keras_model
         trained multi gpu model
 
     Returns
@@ -447,9 +448,9 @@ def dice_coef_loss(y_true, y_pred):
 
     Parameters
     ----------
-    y_true: K.Model
+    y_true: keras_model
         trained keras model
-    y_pred: K.Model
+    y_pred: keras_model
         trained multi gpu model
 
     Returns
@@ -474,9 +475,9 @@ def jacard_coef(y_true, y_pred):
 
     Parameters
     ----------
-    y_true: K.Model
+    y_true: keras_model
         trained keras model
-    y_pred: K.Model
+    y_pred: keras_model
         trained multi gpu model
 
     Returns
@@ -502,9 +503,9 @@ def jacard_coef_loss(y_true, y_pred):
 
     Parameters
     ----------
-    y_true: K.Model
+    y_true: keras_model
         trained keras model
-    y_pred: K.Model
+    y_pred: keras_model
         trained multi gpu model
 
     Returns
