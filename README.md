@@ -22,7 +22,7 @@
 
 **robin** requires [Python](https://www.python.org/) v3.5+ to run.
 
-Getting and installig **robin** is even more easier now with the following commands. 
+Getting and installing **robin** is even more easier now with the following commands. 
 
 ```sh
 $ git clone https://github.com/venkatakolagotla/robin.git
