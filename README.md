@@ -22,13 +22,15 @@
 
 **robin** requires [Python](https://www.python.org/) v3.5+ to run.
 
-Getting and installig **robin** is even more easier now with the following commands. Replace the dummy weight file with the real weight file with the same name and you are good to start binarizing some documents with robin!
+Getting and installig **robin** is even more easier now with the following commands. 
 
 ```sh
 $ git clone https://github.com/venkatakolagotla/robin.git
 $ cd robin
 $ python steup.py install
 ```
+Replace the dummy weight file with a real weight file with the same name in the weights directory and you are good to start binarizing some documents with robin!
+
 ## HowTo
 
 #### Robin
