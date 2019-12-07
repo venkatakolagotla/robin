@@ -27,7 +27,7 @@ Getting and installig **robin** is even more easier now with the following comma
 ```sh
 $ git clone https://github.com/venkatakolagotla/robin.git
 $ cd robin
-$ python steup.py install
+$ python setup.py install
 ```
 Replace the dummy weight file with a real weight file with the same name in the weights directory and you are good to start binarizing some documents with robin!
 
