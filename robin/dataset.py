@@ -237,8 +237,7 @@ def main(
     step_y: int = 128,
     processes: int = cpu_count(),
 ) -> None:
-    """Create train and ground-truth images suitable
-        for U-net from your dataset.
+    """Create train and ground-truth images suitable for robin training.
 
     Parameters
     ----------
