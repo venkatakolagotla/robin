@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 
 import os
-from multiprocessing import cpu_count
 
 import cv2
 import numpy as np
@@ -284,7 +283,7 @@ def process_with_robin(
     parts = split_img(img)
     parts = np.array(parts)
     parts.shape = (parts.shape[0], parts.shape[1], parts.shape[2], 1)
-    parts = model.predict(parts, batchsize, verbose=1, workers=cpu_count())
+    parts = model.predict(parts, batchsize, verbose=1)
     tmp = []
     for part in parts:
         part.shape = (128, 128)
