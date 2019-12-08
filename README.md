@@ -2,6 +2,9 @@
 
 [![Build Status](https://travis-ci.org/venkatakolagotla/robin.svg?branch=master)](https://travis-ci.org/venkatakolagotla/robin)
 
+.. image:: https://codecov.io/gh/codecov/example-python/branch/master/graph/badge.svg
+  :target: https://codecov.io/gh/venkatakolagotla/robin
+
 <img src="static/logo/robin.png" height="150" width="150">
 
 **robin** is a **RO**bust document image **BIN**arization tool, written in Python.
