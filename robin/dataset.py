@@ -19,7 +19,7 @@ def split_img_overlay(
     size_y: int = 128,
     step_x: int = 128,
     step_y: int = 128,
-) -> [np.array]:
+) -> ([np.array], int, int):
     """Split image to parts (little images) with possible overlay.
 
     Parameters
@@ -39,6 +39,10 @@ def split_img_overlay(
     -------
     array_like
         returns a list of numpy arrays
+    int
+        border value along width
+    int
+        border value along height
 
     Notes
     -----
