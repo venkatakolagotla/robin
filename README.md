@@ -1,9 +1,8 @@
 # robin
 
 [![Build Status](https://travis-ci.org/venkatakolagotla/robin.svg?branch=master)](https://travis-ci.org/venkatakolagotla/robin)
+[![coverage](https://codecov.io/gh/codecov/example-python/branch/master/graph/badge.svg)](https://codecov.io/gh/venkatakolagotla/robin)
 
-.. image:: https://codecov.io/gh/codecov/example-python/branch/master/graph/badge.svg
-  :target: https://codecov.io/gh/venkatakolagotla/robin
 
 <img src="static/logo/robin.png" height="150" width="150">
 
