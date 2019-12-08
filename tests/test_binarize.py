@@ -1,4 +1,4 @@
-import binarize
+from .robin import binarize
 
 
 def test_binarize():
