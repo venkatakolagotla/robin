@@ -1,6 +1,6 @@
 # robin
 
-[![BSD License](http://img.shields.io/badge/license-MIT-green.svg)](https://github.com/venkatakolagotla/robin/blob/master/LICENSE)[![Build Status](https://travis-ci.org/venkatakolagotla/robin.svg?branch=master)][![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pip-licenses.svg)](3.5|3.6|3.7)
+[![BSD License](http://img.shields.io/badge/license-MIT-green.svg)](https://github.com/venkatakolagotla/robin/blob/master/LICENSE)[![Build Status]](https://travis-ci.org/venkatakolagotla/robin.svg?branch=master)][![PyPI - Python Version](3.5|3.6|3.7)]
 
 
 <img src="static/logo/robin.png" height="150" width="150">
