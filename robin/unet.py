@@ -1,32 +1,32 @@
 #!/usr/bin/python3
 
 from keras.models import Model
-from keras import layers as keras_layer
 from keras.layers.merge import concatenate
 from keras.layers.normalization import BatchNormalization
 from keras.layers.core import SpatialDropout2D, Activation
 from keras.layers import Input, Conv2D, MaxPooling2D, UpSampling2D
+from tensorflow import Tensor as tf_tensor
 
 
-def double_conv_layer(inputs: keras_layer, filter: int) -> keras_layer:
+def double_conv_layer(inputs: tf_tensor, filter: int) -> tf_tensor:
     """Create a double convolution layer with
     mentioned inputs and filters.
 
     Parameters
     ----------
-    inputs: keras_layer
+    inputs: tf_tensor
         input keras layer
     filter: int
-        filter size/ kernal size for the keras_layer
+        filter size/ kernal size for the tf_tensor
 
     Returns
     -------
-    keras_layer
-        keras layer with mentioned number of filters
+    tf_tensor
+        tensor with mentioned number of filters
 
     Example
     -------
-    robin.unet.double_conv_layer(keras_layer, 32)
+    robin.unet.double_conv_layer(Input, 32)
 
     """
     conv = Conv2D(
@@ -48,20 +48,20 @@ def double_conv_layer(inputs: keras_layer, filter: int) -> keras_layer:
     return conv
 
 
-def down_layer(inputs: keras_layer, filter: int) -> keras_layer:
+def down_layer(inputs: tf_tensor, filter: int) -> tf_tensor:
     """Create downsampling layer.
 
     Parameters
     ----------
-    inputs: keras_layer
+    inputs: tf_tensor
         input keras layer
     filter: int
-        filter size/ kernal size for the keras_layer
+        filter size/ kernal size for the tf_tensor
 
     Returns
     -------
-    keras_layer
-        keras layer with mentioned number of filters
+    tf_tensor
+        tensor with mentioned number of filters
 
     See Also
     --------
@@ -69,7 +69,7 @@ def down_layer(inputs: keras_layer, filter: int) -> keras_layer:
 
     Example
     -------
-    robin.unet.down_layer(keras_layer, 64)
+    robin.unet.down_layer(tf_tensor, 64)
 
     """
     conv = double_conv_layer(inputs, filter)
@@ -78,25 +78,25 @@ def down_layer(inputs: keras_layer, filter: int) -> keras_layer:
 
 
 def up_layer(
-    inputs: keras_layer,
-    concats: keras_layer,
+    inputs: tf_tensor,
+    concats: tf_tensor,
     filter: int
-) -> keras_layer:
+) -> tf_tensor:
     """Create upsampling layer.
 
     Parameters
     ----------
-    inputs: keras_layer
+    inputs: tf_tensor
         input keras layer
-    concats: keras_layer
+    concats: tf_tensor
         keras layer to concat
     filter: int
-        filter size/ kernal size for the keras_layer
+        filter size/ kernal size for the tf_tensor
 
     Returns
     -------
-    keras_layer
-        keras layer with mentioned number of filters
+    tf_tensor
+        tensor with mentioned number of filters
 
     See Also
     --------
