@@ -1,5 +1,5 @@
 tensorflow==1.14
-numpy==1.17.4
+numpy
 alt_model_checkpoint==1.0.1
 opencv_python==4.1.2.30
 Keras==2.2.4
