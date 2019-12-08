@@ -1,5 +1,7 @@
 # robin
 
+[![Build Status](https://travis-ci.org/venkatakolagotla/robin.svg?branch=master)
+
 <img src="static/logo/robin.png" height="150" width="150">
 
 **robin** is a **RO**bust document image **BIN**arization tool, written in Python.
