@@ -1,6 +1,6 @@
 # robin
 
-![Build Status](https://travis-ci.org/venkatakolagotla/robin.svg?branch=master)
+[![Build Status](https://travis-ci.org/venkatakolagotla/robin.svg?branch=master)](https://travis-ci.org/venkatakolagotla/robin)
 
 <img src="static/logo/robin.png" height="150" width="150">
 
