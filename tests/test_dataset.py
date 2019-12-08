@@ -1,4 +1,4 @@
-import dataset
+from robin import dataset
 
 
 def test_dataset():

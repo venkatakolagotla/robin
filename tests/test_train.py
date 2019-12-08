@@ -1,4 +1,4 @@
-import train
+from robin import train
 
 
 def test_train():

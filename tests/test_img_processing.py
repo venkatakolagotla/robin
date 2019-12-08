@@ -1,4 +1,4 @@
-import img_processing
+from robin import img_processing
 import numpy as np
 
 
