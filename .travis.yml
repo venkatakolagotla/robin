@@ -1,4 +1,6 @@
+os: Linux
 language: python
 sudo: false
 python:
 - 3.6
+script: py.test -v
