@@ -1,6 +1,5 @@
-os: Linux
+os: linux
 language: python
-sudo: false
 python:
 - 3.6
 script: python setup.py test
