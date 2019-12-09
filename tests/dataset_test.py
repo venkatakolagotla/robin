@@ -4,7 +4,7 @@ import cv2
 
 
 def test_dataset():
-    img = cv2.imread('test_data/input_imgs/01_in.png')
+    img = cv2.imread('test_data/input_imgs/02_in.png')
     output = dataset.split_img_overlay(img)
     assert(type(output[0]) == list)
     assert(type(output[1]) == int)
