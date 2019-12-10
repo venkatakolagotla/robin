@@ -10,8 +10,8 @@ import numpy as np
 from keras.optimizers import Adam
 
 from .unet import unet
-from .train import dice_coef, dice_coef_loss
-from .img_processing import binarize_img, mkdir_s
+from .utils.metric_utils import dice_coef, dice_coef_loss
+from .utils.img_processing_utils import binarize_img, mkdir_s
 
 
 weights_path = os.path.realpath(__file__)

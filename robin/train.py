@@ -1,108 +1,37 @@
 #!/usr/bin/python3
 
 import os
-import sys
 import time
 import random
 from copy import deepcopy
 
 import cv2
 import PIL
-import imageio
+
 import numpy as np
 from Augmentor import DataPipeline
-from Augmentor.Operations import Operation
 
-from keras import backend as K
 from keras.optimizers import Adam
-from keras.models import Model as keras_model
-from keras.callbacks import TensorBoard, Callback, EarlyStopping
+
 from keras.utils import multi_gpu_model, Sequence
-from alt_model_checkpoint import AltModelCheckpoint
+
 
 from .unet import unet
-from .img_processing import binarize_img, mkdir_s, normalize_gt, normalize_in
-
-
-class GaussianNoiseAugmentor(Operation):
-    """Gaussian Noise in Augmentor format."""
-
-    def __init__(self, probability, mean, sigma):
-        Operation.__init__(self, probability)
-        self.mean = mean
-        self.sigma = sigma
-
-    def __gaussian_noise__(self, image):
-        img = np.array(image).astype(np.int16)
-        tmp = np.zeros(img.shape, np.int16)
-        img = img + cv2.randn(tmp, self.mean, self.sigma)
-        img[img < 0] = 0
-        img[img > 255] = 255
-        img = img.astype(np.uint8)
-        image = PIL.Image.fromarray(img)
-
-        return image
-
-    def perform_operation(self, images):
-        images = [self.__gaussian_noise__(image) for image in images]
-        return images
-
-
-class SaltPepperNoiseAugmentor(Operation):
-    """Gaussian Noise in Augmentor format."""
-
-    def __init__(self, probability, prop):
-        Operation.__init__(self, probability)
-        self.prop = prop
-
-    def __salt_pepper_noise__(self, image):
-        img = np.array(image).astype(np.uint8)
-        h = img.shape[0]
-        w = img.shape[1]
-        n = int(h * w * self.prop)
-        for i in range(n // 2):
-            # Salt.
-            curr_y = int(np.random.randint(0, h))
-            curr_x = int(np.random.randint(0, w))
-            img[curr_y, curr_x] = 255
-        for i in range(n // 2):
-            # Pepper.
-            curr_y = int(np.random.randint(0, h))
-            curr_x = int(np.random.randint(0, w))
-            img[curr_y, curr_x] = 0
-        image = PIL.Image.fromarray(img)
-
-        return image
-
-    def perform_operation(self, images):
-        images = [self.__salt_pepper_noise__(image) for image in images]
-        return images
-
-
-class InvertPartAugmentor(Operation):
-    """Invert colors in Augmentor formant."""
-
-    def __init__(self, probability):
-        Operation.__init__(self, probability)
-
-    def __invert__(self, image):
-        img = np.array(image).astype(np.uint8)
-        h = img.shape[0]
-        w = img.shape[1]
-        y_begin = int(np.random.randint(0, h))
-        x_begin = int(np.random.randint(0, w))
-        y_add = int(np.random.randint(0, h - y_begin))
-        x_add = int(np.random.randint(0, w - x_begin))
-        for i in range(y_begin, y_begin + y_add):
-            for j in range(x_begin, x_begin + x_add):
-                img[i][j] = 255 - img[i][j]
-        image = PIL.Image.fromarray(img)
-
-        return image
-
-    def perform_operation(self, images):
-        images = [self.__invert__(image) for image in images]
-        return images
+from .utils.img_processing_utils import (
+    normalize_gt,
+    normalize_in
+)
+from .utils.augmentor_utils import (
+    GaussianNoiseAugmentor,
+    InvertPartAugmentor,
+    SaltPepperNoiseAugmentor
+)
+from .utils.metric_utils import (
+    dice_coef,
+    dice_coef_loss,
+    jacard_coef
+)
+from .utils.callback_utils import create_callbacks
 
 
 class ParallelDataGenerator(Sequence):
@@ -225,304 +154,6 @@ class ParallelDataGenerator(Sequence):
             )
 
         return imgs_in, imgs_gt
-
-
-class Visualisation(Callback):
-    """Custom Keras callback for visualising training through GIFs."""
-
-    def __init__(
-        self,
-        dir_name: str = "visualisation",
-        batchsize: int = 20,
-        monitor: str = "val_loss",
-        save_best_epochs_only: bool = False,
-        mode: str = "min",
-    ):
-        super(Visualisation, self).__init__()
-        self.dir_name = dir_name
-        self.batchsize = batchsize
-        self.epoch_number = 0
-        self.fnames = os.listdir(self.dir_name)
-        for fname in self.fnames:
-            mkdir_s(
-                os.path.join(
-                    self.dir_name,
-                    fname[: fname.rfind(".")] + "_frames")
-                    )
-        self.monitor = monitor
-        self.save_best_epochs_only = save_best_epochs_only
-        self.mode = mode
-        self.curr_metric = None
-
-    def on_train_end(self, logs=None):
-        for fname in self.fnames:
-            frames = []
-            for frame_name in sorted(
-                os.listdir(
-                    os.path.join(
-                        self.dir_name,
-                        fname[: fname.rfind(".")] + "_frames")
-                )
-            ):
-                frames.append(
-                    imageio.imread(
-                        os.path.join(
-                            self.dir_name,
-                            fname[: fname.rfind(".")] + "_frames",
-                            frame_name,
-                        )
-                    )
-                )
-            imageio.mimsave(
-                os.path.join(
-                    self.dir_name,
-                    fname[: fname.rfind(".")] + ".gif"),
-                frames,
-                format="GIF",
-                duration=0.5,
-            )
-            # rmtree(os.path.join(
-            #     self.dir_name,
-            #     fname[:fname.rfind('.')] + '_frames'))
-
-    def on_epoch_end(self, epoch, logs):
-        self.epoch_number += 1
-        if (not self.save_best_epochs_only) or (
-            (self.curr_metric is None)
-            or (self.mode == "min" and logs[self.monitor] < self.curr_metric)
-            or (self.mode == "max" and logs[self.monitor] > self.curr_metric)
-        ):
-            self.curr_metric = logs[self.monitor]
-            for fname in self.fnames:
-                img = cv2.imread(
-                    os.path.join(self.dir_name, fname), cv2.IMREAD_GRAYSCALE
-                ).astype(np.float32)
-                img = binarize_img(img, self.model, self.batchsize)
-                cv2.imwrite(
-                    os.path.join(
-                        self.dir_name,
-                        fname[: fname.rfind(".")] + "_frames",
-                        str(self.epoch_number) + "_out.png",
-                    ),
-                    img,
-                )
-
-
-def create_callbacks(
-    model: keras_model,
-    original_model: keras_model,
-    debug: str,
-    num_gpus: int,
-    augmentate: bool,
-    batchsize: int,
-    vis: str,
-    weights_path: str,
-) -> list:
-    """Create Keras callbacks for training.
-
-    Parameters
-    ----------
-    model: keras_model
-        keras model
-    original_model: keras_model
-        model to use when num_gpus > 1
-
-    Returns
-    -------
-    list
-        list of callbacks tu use in training.
-
-    See Also
-    --------
-    main()
-
-    Example
-    -------
-    robin.train.create_callbacks(model, gpu_model)
-
-    """
-    callbacks = []
-
-    # Model checkpoint.
-    if num_gpus == 1:
-        model_checkpoint = AltModelCheckpoint(
-            weights_path
-            if debug == ""
-            else os.path.join(
-                debug,
-                "weights",
-                "weights-improvement-{epoch:02d}.hdf5"),
-            model,
-            monitor="val_dice_coef",
-            mode="max",
-            verbose=1,
-            save_best_only=True,
-            save_weights_only=True,
-        )
-    else:
-        model_checkpoint = AltModelCheckpoint(
-            weights_path
-            if debug == ""
-            else os.path.join(
-                debug,
-                "weights",
-                "weights-improvement-{epoch:02d}.hdf5"),
-            original_model,
-            monitor="val_dice_coef",
-            mode="max",
-            verbose=1,
-            save_best_only=True,
-            save_weights_only=True,
-        )
-    callbacks.append(model_checkpoint)
-
-    # Early stopping.
-    model_early_stopping = EarlyStopping(
-        monitor="val_dice_coef",
-        min_delta=0.001,
-        patience=20,
-        verbose=1,
-        mode="max"
-    )
-    callbacks.append(model_early_stopping)
-
-    # Tensorboard logs.
-    if debug != "":
-        mkdir_s(debug)
-        mkdir_s(os.path.join(debug, "weights"))
-        mkdir_s(os.path.join(debug, "logs"))
-        model_tensorboard = TensorBoard(
-            log_dir=os.path.join(debug, "logs"),
-            histogram_freq=0,
-            write_graph=True,
-            write_images=True,
-        )
-        callbacks.append(model_tensorboard)
-
-    # Training visualisation.
-    if vis != "":
-        model_visualisation = Visualisation(
-            dir_name=vis,
-            batchsize=batchsize,
-            monitor="val_dice_coef",
-            save_best_epochs_only=True,
-            mode="max",
-        )
-        callbacks.append(model_visualisation)
-
-    return callbacks
-
-
-def dice_coef(y_true: keras_model, y_pred: keras_model) -> float:
-    """Count Sorensen-Dice coefficient for output and ground-truth image.
-
-    Parameters
-    ----------
-    y_true: keras_model
-        trained keras model
-    y_pred: keras_model
-        trained multi gpu model
-
-    Returns
-    -------
-    float
-        dice coefficient calculated on predicted and input class values.
-
-    Example
-    -------
-    robin.train.dice_coef(y_true, y_pred)
-
-    """
-    y_true_f = K.flatten(y_true)
-    y_pred_f = K.flatten(y_pred)
-    intersection = K.sum(y_true_f * y_pred_f)
-    dice = (2.0 * intersection + 1.0) / (
-        K.sum(y_true_f)
-        + K.sum(y_pred_f)
-        + 1.0)
-    return dice
-
-
-def dice_coef_loss(y_true, y_pred):
-    """loss of Sorensen-Dice coefficient for output and ground-truth image.
-
-    Parameters
-    ----------
-    y_true: keras_model
-        trained keras model
-    y_pred: keras_model
-        trained multi gpu model
-
-    Returns
-    -------
-    float
-        dice loss calculated from dice coefficient.
-
-    See Also
-    --------
-    dice_coef()
-
-    Example
-    -------
-    robin.train.dice_coef_loss(y_true, y_pred)
-
-    """
-    return 1 - dice_coef(y_true, y_pred)
-
-
-def jacard_coef(y_true, y_pred):
-    """Count Jaccard coefficient for output and ground-truth image.
-
-    Parameters
-    ----------
-    y_true: keras_model
-        trained keras model
-    y_pred: keras_model
-        trained multi gpu model
-
-    Returns
-    -------
-    float
-        Jaccard coefficient calculated on predicted and input class values.
-
-    Example
-    -------
-    robin.train.jacard_coef(y_true, y_pred)
-
-    """
-    y_true_f = K.flatten(y_true)
-    y_pred_f = K.flatten(y_pred)
-    intersection = K.sum(y_true_f * y_pred_f)
-    return (intersection + 1.0) / (
-        K.sum(y_true_f) + K.sum(y_pred_f) - intersection + 1.0
-    )
-
-
-def jacard_coef_loss(y_true, y_pred):
-    """Count loss of Jaccard coefficient for output and ground-truth image.
-
-    Parameters
-    ----------
-    y_true: keras_model
-        trained keras model
-    y_pred: keras_model
-        trained multi gpu model
-
-    Returns
-    -------
-    float
-        Jaccard loss calculated from Jaccard coefficient.
-
-    See Also
-    --------
-    jacard_coef()
-
-    Example
-    -------
-    robin.train.jacard_coef_loss(y_true, y_pred)
-
-    """
-    return 1 - jacard_coef(y_true, y_pred)
 
 
 def main(
@@ -740,8 +371,6 @@ def main(
     if debug != "":
         model.save_weights(weights_path)
     print("finished in {0:.2f} seconds".format(time.time() - start_time))
-    # Sometimes script freezes.
-    sys.exit(0)
 
 
 if __name__ == "__main__":

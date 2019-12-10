@@ -1,7 +1,7 @@
 from . import (
     binarize,
     train,
-    img_processing,
+    utils,
     unet,
     dataset
     )

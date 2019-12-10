@@ -10,7 +10,7 @@ from multiprocessing import Pool, cpu_count
 import cv2
 import numpy as np
 
-from .img_processing import mkdir_s
+from .utils.img_processing_utils import mkdir_s
 
 
 def split_img_overlay(
