@@ -7,29 +7,26 @@ from copy import deepcopy
 
 import cv2
 import PIL
-
 import numpy as np
 from Augmentor import DataPipeline
 
 from keras.optimizers import Adam
-
 from keras.utils import multi_gpu_model, Sequence
 
-
 from .unet import unet
-from .utils.img_processing_utils import (
-    normalize_gt,
-    normalize_in
+from .utils.metric_utils import (
+    dice_coef,
+    dice_coef_loss,
+    jacard_coef
 )
 from .utils.augmentor_utils import (
     GaussianNoiseAugmentor,
     InvertPartAugmentor,
     SaltPepperNoiseAugmentor
 )
-from .utils.metric_utils import (
-    dice_coef,
-    dice_coef_loss,
-    jacard_coef
+from .utils.img_processing_utils import (
+    normalize_gt,
+    normalize_in
 )
 from .utils.callback_utils import create_callbacks
 
