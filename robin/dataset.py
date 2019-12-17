@@ -3,6 +3,7 @@
 import os
 import time
 import glob
+from typing import List, Tuple
 from functools import partial
 from shutil import copy2, rmtree
 from multiprocessing import Pool, cpu_count
@@ -14,34 +15,32 @@ from .utils.img_processing_utils import mkdir_s
 
 
 def split_img_overlay(
-    img: np.array,
+    img: np.ndarray,
     size_x: int = 128,
     size_y: int = 128,
     step_x: int = 128,
     step_y: int = 128,
-) -> ([np.array], int, int):
+) -> Tuple[List[np.ndarray], int, int]:
     """Split image to parts (little images) with possible overlay.
 
     Parameters
     ----------
-    img: np.array
+    img: np.ndarray
         input image array
-    size_x: int
+    size_x: int, optional
         width for image part (deafult is `128`).
-    size_y: int
+    size_y: int, optional
         height for image part (deafult is `128`).
-    step_x: int
+    step_x: int, optional
         width overlay for image part (deafult is `128`).
-    step_y: int
+    step_y: int, optional
         height overlay for image part (deafult is `128`).
 
     Returns
     -------
-    array_like
-        returns a list of numpy arrays
-    int
+    Tuple[List[numpy.ndarray], int, int]
+        list of numpy arrays
         border value along width
-    int
         border value along height
 
     Notes
@@ -99,16 +98,20 @@ def split_img_overlay(
     return parts, border_y, border_x
 
 
-def save_imgs(imgs_in: [np.array], imgs_gt: [np.array], fname_in: str) -> None:
+def save_imgs(
+    imgs_in: List[np.ndarray],
+    imgs_gt: List[np.ndarray],
+    fname_in: str
+) -> None:
     """Save image parts to one folder.
 
     Save all image parts to folder with name '(original image name) + _parts'.
 
     Parameters
     ----------
-    imgs_in: [np.array]
+    imgs_in: List[np.ndarray]
         list of input image arraies
-    imgs_gt: [np.array]
+    imgs_gt: List[np.ndarray]
         list of gt image arraies
     fname_in: str
         original full image
@@ -131,7 +134,7 @@ def save_imgs(imgs_in: [np.array], imgs_gt: [np.array], fname_in: str) -> None:
 
 
 def process_img(
-    fname_in,
+    fname_in: List[str],
     size_x: int = 128,
     size_y: int = 128,
     step_x: int = 128,
@@ -141,8 +144,8 @@ def process_img(
 
     Parameters
     ----------
-    img: np.array
-        input image array
+    fname_in: List[str],
+        input and gt image list
     size_x: int
         width for image part (deafult is `128`).
     size_y: int
@@ -245,21 +248,21 @@ def main(
 
     Parameters
     ----------
-    input: str
+    input: str, optional
         input path of input images (default is os.path.join(".", "input"))
-    output: str
+    output: str, optional
         output path to created images(default is os.path.join(".", "output"))
-    shuffle: bool
+    shuffle: bool, optional
         stuffle the newly created images (default is True)
-    size_x: int
+    size_x: int, optional
         width for image part (deafult is `128`).
-    size_y: int
+    size_y: int, optional
         height for image part (deafult is `128`).
-    step_x: int
+    step_x: int, optional
         width overlay for image part (deafult is `128`).
-    step_y: int
+    step_y: int, optional
         height overlay for image part (deafult is `128`).
-    processes: int
+    processes: int, optional
         number of cpu cores to use(default is cpu_count()
 
     Returns

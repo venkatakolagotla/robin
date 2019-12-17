@@ -3,6 +3,7 @@
 import os
 import glob
 import time
+from typing import List
 
 import cv2
 import numpy as np
@@ -25,25 +26,25 @@ def main(
     output: str = os.path.join(".", "output"),
     weights_path: str = weights_path,
     batchsize: int = 2,
-) -> [np.array]:
+) -> List[np.ndarray]:
     """Binarize images from input directory and
     write them to output directory.
 
     Parameters
     ----------
-    input: str
+    input: str, optional
         input path for images
-    output: str
+    output: str, optional
         output path to save images
-    weights_path: str
+    weights_path: str, optional
         path to weights file
-    batchsize: int
+    batchsize: int, optional
         batchsize to use in model prediction
 
     Retuns
     ------
-    array_like
-        list of binary images in np.array format
+    List[numpy.ndarray]
+        list of binary images in np.ndarray format
 
     Notes
     -----

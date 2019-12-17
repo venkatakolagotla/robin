@@ -113,8 +113,21 @@ def up_layer(
     )
 
 
-def unet() -> Model:
-    """Create U-net.
+def unet(
+    width: int = 128,
+    height: int = 128,
+    channels: int = 1
+) -> Model:
+    """Create U-net for input image/tensor size.
+
+    Parameters
+    ----------
+    width : int
+        width of input tensor, (default is `128`)
+    height : int
+        height of input tensor, (default is `128`)
+    channels : int
+        number of channels in image, (default is `1`)
 
     Returns
     -------

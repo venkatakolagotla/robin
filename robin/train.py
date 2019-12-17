@@ -4,6 +4,7 @@ import os
 import time
 import random
 from copy import deepcopy
+from typing import List, Tuple
 
 import cv2
 import PIL
@@ -32,12 +33,24 @@ from .utils.callback_utils import create_callbacks
 
 
 class ParallelDataGenerator(Sequence):
-    """Generate images for training/validation/testing (parallel version)."""
+    """Generate images for training/validation/testing (parallel version).
 
+    Parameters
+    ----------
+    fnames_in: List[str]
+        list of input images
+    fnames_gt: List[str]
+        list of gt images
+    batch_size: int
+        batch size to generate augmentations on images
+    augmentate: bool
+        apply augmentate to batch of images
+
+    """
     def __init__(
         self,
-        fnames_in,
-        fnames_gt,
+        fnames_in: List[str],
+        fnames_gt: List[str],
         batch_size: int,
         augmentate: bool
     ):
@@ -53,7 +66,8 @@ class ParallelDataGenerator(Sequence):
     def on_epoch_end(self):
         np.random.shuffle(self.idxs)
 
-    def __apply_augmentation__(self, p):
+    def __apply_augmentation__(self, p: object) -> List[np.ndarray]:
+        """Apply augmentation on batch of images"""
         batch = []
         for i in range(0, len(p.augmentor_images)):
             images_to_return = [
@@ -71,9 +85,26 @@ class ParallelDataGenerator(Sequence):
             batch.append(images_to_return)
         return batch
 
-    def augmentate_batch(self, imgs_in, imgs_gt):
-        """Generate ordered augmented batch of images, using Augmentor"""
+    def augmentate_batch(
+        self,
+        imgs_in: List[np.ndarray],
+        imgs_gt: List[np.ndarray]
+    ) -> Tuple[List[np.ndarray], List[np.ndarray]]:
+        """Generate ordered augmented batch of images, using Augmentor
 
+        Parameters
+        ----------
+        imgs_in: List[numpy.ndarray]
+            list of input images as array
+        imgs_gt: List[numpy.ndarray]
+            list of gt image as array
+        Returns
+        -------
+        Tuple[List[numpy.ndarray], List[numpy.ndarray]]
+            List of input images after applying augmentation
+            List of gt images after applying augmentation
+
+        """
         # Non-Linear transformations.
         imgs = [[imgs_in[i], imgs_gt[i]] for i in range(len(imgs_in))]
         p = DataPipeline(imgs)
@@ -106,7 +137,7 @@ class ParallelDataGenerator(Sequence):
         return imgs_in, imgs_gt
 
     def __getitem__(self, idx):
-        # Creating numpy arrays with images.
+        """Creates numpy arrays with images."""
         start = idx * self.batch_size
         stop = start + self.batch_size
         if stop >= self.idxs.shape[0]:
@@ -172,38 +203,38 @@ def main(
 
     Parameters
     ----------
-    input: str
+    input: str, optional
         input dir with in and gt sub folders to train
         (default is os.path.join(".", "input")).
-    vis: str
+    vis: str, optional
         dir with image to use for train visualization
         (default is os.path.join(".", "vis")).
-    debug: str
+    debug: str, optional
         path to save training logs
         (default is os.path.join(".", "train_logs")).
-    epochs: int
-        number of epocs to train robin (default is 1).
-    batchsize: int
-        batchsize to train robin (default is 32).
-    augmentate: bool
+    epochs: int, optional
+        number of epocs to train robin (default is `1`).
+    batchsize: int, optional
+        batchsize to train robin (default is `32`).
+    augmentate: bool, optional
         argumentate the original images for training robin
-        (default is True)
-    train_split: int
-        train dataset split percentage (default is 80).
-    val_split: int
-        validation dataset split percentage (default is 10).
-    test_split: int
-        train dataset split percentage (default is 10).
-    weights_path: str
+        (default is `True`)
+    train_split: int, optional
+        train dataset split percentage (default is `80`).
+    val_split: int, optional
+        validation dataset split percentage (default is `10`).
+    test_split: int, optional
+        train dataset split percentage (default is `10`).
+    weights_path: str, optional
         path to save final weights
         (default is os.path.join(".", "bin_weights.hdf5")).
-    num_gpus: int
-        number of gpus to use for training robin (default is 1)
-    extraprocesses: int
-        number of extraprocesses to use (default is 0).
-    queuesize: int
+    num_gpus: int, optional
+        number of gpus to use for training robin (default is `1`)
+    extraprocesses: int, optional
+        number of extraprocesses to use (default is `0`).
+    queuesize: int, optional
         number of batches to generate in queue while training
-        (default is 10).
+        (default is `10`).
 
     Retunrs
     -------
