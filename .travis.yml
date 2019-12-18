@@ -5,9 +5,11 @@ python:
   - 3.6
 install: 
   - pip install codecov
+  - pip install tox 
 script:
   - python setup.py install
   - pytest -v
+  - tox
 env:
   - CODECOV_TOKEN="6a521bf9-f74e-48af-871f-bd47a7176d60"
 after_success:
