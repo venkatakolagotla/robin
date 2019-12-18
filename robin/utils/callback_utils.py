@@ -86,13 +86,13 @@ class Visualisation(Callback):
                     fname[: fname.rfind(".")] + ".gif"),
                 frames,
                 format="GIF",
-                duration=0.5,
+                duration=0.5
             )
             # rmtree(os.path.join(
             #     self.dir_name,
             #     fname[:fname.rfind('.')] + '_frames'))
 
-    def on_epoch_end(self, epoch: int, logs: Dict[str:Any]):
+    def on_epoch_end(self, epoch: int, logs: Dict[str, Any]):
         """Saves prediction of image after epoch into
         a folder with the same name.
 
@@ -100,7 +100,7 @@ class Visualisation(Callback):
         ----------
         epoch: int
             current epoch number
-        logs: Dict[str:Any]
+        logs: Dict[str, Any]
             dictonary of metrics
 
         """
