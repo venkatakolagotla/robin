@@ -1,9 +1,12 @@
+from __future__ import print_function
+
 from robin import binarize
-# import shutil
+import shutil
 
 
-def test_binarize():
-    output = binarize.main(input="test_data/input_imgs")
+def test_main(data_path):
+    print(data_path)
+    output = binarize.main(data_path)
     assert(type(output) == list)
     # Remove the directory created
-    # shutil.rmtree('output')
+    shutil.rmtree('output')
