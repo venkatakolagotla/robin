@@ -4,6 +4,7 @@ import os
 import cv2
 import imageio
 import numpy as np
+from typing import Any, Dict, List
 
 from alt_model_checkpoint import AltModelCheckpoint
 
@@ -17,12 +18,26 @@ from .img_processing_utils import (
 
 
 class Visualisation(Callback):
-    """Custom Keras callback for visualising training through GIFs."""
+    """Custom Keras callback for visualising training through GIFs.
 
+    Parameters
+    ----------
+    batchsize: int
+        batchsize to generate samples
+    dir_name: str, optional
+        folder with images to visualize training
+    monitor: str, optional
+        metric to monitor
+    save_best_epochs_only: bool, optional
+        save the weights only when the metric improves
+    mode: str, optional
+        mode for the metric to monitor
+
+    """
     def __init__(
         self,
+        batchsize: int,
         dir_name: str = "visualisation",
-        batchsize: int = 20,
         monitor: str = "val_loss",
         save_best_epochs_only: bool = False,
         mode: str = "min",
@@ -44,6 +59,9 @@ class Visualisation(Callback):
         self.curr_metric = None
 
     def on_train_end(self, logs=None):
+        """Saves metrics for each iteration to a dictonary
+        and saves images into gifs at the end of training.
+        """
         for fname in self.fnames:
             frames = []
             for frame_name in sorted(
@@ -74,7 +92,18 @@ class Visualisation(Callback):
             #     self.dir_name,
             #     fname[:fname.rfind('.')] + '_frames'))
 
-    def on_epoch_end(self, epoch, logs):
+    def on_epoch_end(self, epoch: int, logs: Dict[str:Any]):
+        """Saves prediction of image after epoch into
+        a folder with the same name.
+
+        Parameters
+        ----------
+        epoch: int
+            current epoch number
+        logs: Dict[str:Any]
+            dictonary of metrics
+
+        """
         self.epoch_number += 1
         if (not self.save_best_epochs_only) or (
             (self.curr_metric is None)
@@ -106,7 +135,7 @@ def create_callbacks(
     batchsize: int,
     vis: str,
     weights_path: str,
-) -> list:
+) -> List[str]:
     """Create Keras callbacks for training.
 
     Parameters
@@ -115,19 +144,40 @@ def create_callbacks(
         keras model
     original_model: keras_model
         model to use when num_gpus > 1
+    debug: str
+        path to save weights and tensorboard logs
+    num_gpus: int
+        number of gpus
+    augmentate: bool
+        augmentate the batch of images
+    batchsize: int
+        batchsize to use during training visualization
+    vis: str
+        images to read for training visualization
+    weights_path: str
+        path to save final weights
 
     Returns
     -------
-    list
+    List[str]
         list of callbacks tu use in training.
 
     See Also
     --------
-    main()
+    Visualisation()
 
     Example
     -------
-    robin.train.create_callbacks(model, gpu_model)
+    robin.callbacks_utils.create_callbacks(
+        model,
+        gpu_model,
+        logs,
+        1,
+        True,
+        32,
+        vis_imgs,
+        weights
+        )
 
     """
     callbacks = []

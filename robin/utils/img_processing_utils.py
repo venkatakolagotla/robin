@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import os
+from typing import List
 
 import cv2
 import numpy as np
@@ -29,17 +30,17 @@ def mkdir_s(path: str) -> None:
         os.makedirs(path)
 
 
-def normalize_in(img: np.array) -> np.array:
+def normalize_in(img: np.ndarray) -> np.ndarray:
     """Normalize the input image to have all pixels in range 0 to 1.
 
     Parameters
     ----------
-    img: np.array
+    img: numpy.ndarray
         image array to normalize
 
     Returns
     -------
-    np.array
+    numpy.ndarray
         normalized image array
 
     Example
@@ -53,17 +54,17 @@ def normalize_in(img: np.array) -> np.array:
     return img
 
 
-def normalize_gt(img: np.array) -> np.array:
+def normalize_gt(img: np.ndarray) -> np.ndarray:
     """Normalize the gt image to have all pixels in range 0 to 1.
 
     Parameters
     ----------
-    img: np.array
+    img: numpy.ndarray
         image array to normalize
 
     Returns
     -------
-    np.array
+    numpy.ndarray
         normalized image array
 
     Example
@@ -77,14 +78,14 @@ def normalize_gt(img: np.array) -> np.array:
 
 
 def add_border(
-    img: np.array, size_x: int = 128, size_y: int = 128
-) -> (np.array, int, int):
+    img: np.ndarray, size_x: int = 128, size_y: int = 128
+) -> (np.ndarray, int, int):
     """Add border to image,
     so it will divide window sizes: size_x and size_y
 
     Parameters
     ----------
-    img: np.array
+    img: numpy.ndarray
         image array to add border
     size_x: int
         width for image part (deafult is `128`).
@@ -93,7 +94,7 @@ def add_border(
 
     Returns
     -------
-    np.array
+    numpy.ndarray
         image array with border
     int
         border value on width
@@ -133,15 +134,15 @@ def add_border(
 
 
 def split_img(
-    img: np.array,
+    img: np.ndarray,
     size_x: int = 128,
     size_y: int = 128
-) -> [np.array]:
+) -> List[np.ndarray]:
     """Split image to parts (little images).
 
     Parameters
     ----------
-    img: np.array
+    img: numpy.ndarray
         image array to split
     size_x: int
         width for image part (deafult is `128`).
@@ -150,8 +151,8 @@ def split_img(
 
     Returns
     -------
-    array_like
-        list of np.array of image parts
+    List[numpy.ndarray]
+        list of numpy.ndarray of image parts
 
     Notes
     -----
@@ -179,12 +180,12 @@ def split_img(
     return parts
 
 
-def combine_imgs(imgs: [np.array], max_y: int, max_x: int) -> np.array:
+def combine_imgs(imgs: List[np.ndarray], max_y: int, max_x: int) -> np.ndarray:
     """Combine image parts to one big image.
 
     Parameters
     ----------
-    img: array_like
+    img: List[numpy.ndarray]
         list image arraies to combine
     max_y: int
         width for image part (deafult is `128`).
@@ -193,8 +194,8 @@ def combine_imgs(imgs: [np.array], max_y: int, max_x: int) -> np.array:
 
     Returns
     -------
-    np.array
-        np.array of combined image
+    numpy.ndarray
+        numpy.ndarray of combined image
 
     Notes
     -----
@@ -228,17 +229,17 @@ def combine_imgs(imgs: [np.array], max_y: int, max_x: int) -> np.array:
     return img
 
 
-def preprocess_img(img: np.array) -> np.array:
+def preprocess_img(img: np.ndarray) -> np.ndarray:
     """Apply bilateral filter to image.
 
     Parameters
     ----------
-    img: np.array
+    img: numpy.ndarray
         image array to preprocess
 
     Returns
     -------
-    np.array
+    numpy.ndarray
         image array after preprocessing
 
     Example
@@ -251,22 +252,22 @@ def preprocess_img(img: np.array) -> np.array:
 
 
 def process_with_robin(
-    img: np.array, model: keras_model, batchsize: int = 2
-) -> np.array:
+    img: np.ndarray, model: keras_model, batchsize: int
+) -> np.ndarray:
     """Split image to 128x128 parts and run U-net for every part.
 
     Parameters
     ----------
-    img: np.array
+    img: numpy.ndarray
         image array to preprocess
     model: keras_model
         keras model
     batchsize: int
-        batchsize to use with the model (default is 2)
+        batchsize to use with the model
 
     Returns
     -------
-    np.array
+    numpy.ndarray
         image array after preprocessing
 
     See Also
@@ -299,17 +300,17 @@ def process_with_robin(
     return img
 
 
-def postprocess_img(img: np.array) -> np.array:
+def postprocess_img(img: np.ndarray) -> np.ndarray:
     """Apply Otsu threshold to image.
 
     Parameters
     ----------
-    img: np.array
+    img: numpy.ndarray
         image array to postprocess
 
     Returns
     -------
-    np.array
+    numpy.ndarray
         postprocessed image array
 
     Example
@@ -322,24 +323,24 @@ def postprocess_img(img: np.array) -> np.array:
 
 
 def binarize_img(
-    img: np.array,
+    img: np.ndarray,
     model: keras_model,
     batchsize: int = 2
-) -> np.array:
+) -> np.ndarray:
     """Binarize image, using U-net, Otsu, bottom-hat transform etc.
 
     Parameters
     ----------
-    img: np.array
+    img: numpy.ndarray
         image array to preprocess
     model: keras_model
         keras model
-    batchsize: int
-        batchsize to use with the model (default is 2)
+    batchsize: int, optional
+        batchsize to use with the model (default is `2`)
 
     Returns
     -------
-    np.array
+    numpy.ndarray
         image array after binarizing
 
     See Also

@@ -1,16 +1,18 @@
+#!/usr/bin/python3
+
+from tensorflow import Tensor
 from keras import backend as K
-from keras.models import Model as keras_model
 
 
-def dice_coef(y_true: keras_model, y_pred: keras_model) -> float:
+def dice_coef(y_true: Tensor, y_pred: Tensor) -> float:
     """Count Sorensen-Dice coefficient for output and ground-truth image.
 
     Parameters
     ----------
-    y_true: keras_model
-        trained keras model
-    y_pred: keras_model
-        trained multi gpu model
+    y_true: Tensor
+        tensor of true pixel values
+    y_pred: Tensor
+        tensor of predicted pixel values
 
     Returns
     -------
@@ -19,7 +21,7 @@ def dice_coef(y_true: keras_model, y_pred: keras_model) -> float:
 
     Example
     -------
-    robin.train.dice_coef(y_true, y_pred)
+    robin.utils.metric_utils.dice_coef(y_true, y_pred)
 
     """
     y_true_f = K.flatten(y_true)
@@ -32,15 +34,15 @@ def dice_coef(y_true: keras_model, y_pred: keras_model) -> float:
     return dice
 
 
-def dice_coef_loss(y_true, y_pred):
+def dice_coef_loss(y_true: Tensor, y_pred: Tensor) -> float:
     """loss of Sorensen-Dice coefficient for output and ground-truth image.
 
     Parameters
     ----------
-    y_true: keras_model
-        trained keras model
-    y_pred: keras_model
-        trained multi gpu model
+    y_true: Tensor
+        tensor of true pixel values
+    y_pred: Tensor
+        tensor of predicted pixel values
 
     Returns
     -------
@@ -53,21 +55,21 @@ def dice_coef_loss(y_true, y_pred):
 
     Example
     -------
-    robin.train.dice_coef_loss(y_true, y_pred)
+    robin.utils.metric_utils.dice_coef_loss(y_true, y_pred)
 
     """
     return 1 - dice_coef(y_true, y_pred)
 
 
-def jacard_coef(y_true, y_pred):
+def jacard_coef(y_true: Tensor, y_pred: Tensor) -> float:
     """Count Jaccard coefficient for output and ground-truth image.
 
     Parameters
     ----------
-    y_true: keras_model
-        trained keras model
-    y_pred: keras_model
-        trained multi gpu model
+    y_true: Tensor
+        tensor of true pixel values
+    y_pred: Tensor
+        tensor of predicted pixel values
 
     Returns
     -------
@@ -76,7 +78,7 @@ def jacard_coef(y_true, y_pred):
 
     Example
     -------
-    robin.train.jacard_coef(y_true, y_pred)
+    robin.utils.metric_utils.jacard_coef(y_true, y_pred)
 
     """
     y_true_f = K.flatten(y_true)
@@ -87,15 +89,15 @@ def jacard_coef(y_true, y_pred):
     )
 
 
-def jacard_coef_loss(y_true, y_pred):
+def jacard_coef_loss(y_true: Tensor, y_pred: Tensor) -> float:
     """Count loss of Jaccard coefficient for output and ground-truth image.
 
     Parameters
     ----------
-    y_true: keras_model
-        trained keras model
-    y_pred: keras_model
-        trained multi gpu model
+    y_true: Tensor
+        tensor of true pixel values
+    y_pred: Tensor
+        tensor of predicted pixel values
 
     Returns
     -------
@@ -108,7 +110,7 @@ def jacard_coef_loss(y_true, y_pred):
 
     Example
     -------
-    robin.train.jacard_coef_loss(y_true, y_pred)
+    robin.utils.metric_utils.jacard_coef_loss(y_true, y_pred)
 
     """
     return 1 - jacard_coef(y_true, y_pred)

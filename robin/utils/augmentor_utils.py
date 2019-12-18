@@ -1,5 +1,7 @@
 #!/usr/bin/python3
 
+from typing import List
+
 import cv2
 import PIL
 import numpy as np
@@ -7,14 +9,37 @@ from Augmentor.Operations import Operation
 
 
 class GaussianNoiseAugmentor(Operation):
-    """Gaussian Noise in Augmentor format."""
+    """Gaussian Noise in Augmentor format.
 
-    def __init__(self, probability, mean, sigma):
+    Parameters
+    ----------
+    probability: float
+        probability of operation being performed
+    mean: float
+        mean of the pixels
+    sigma: float
+        standard deviation of the pixels
+
+    """
+    def __init__(self, probability: float, mean: float, sigma: float):
         Operation.__init__(self, probability)
         self.mean = mean
         self.sigma = sigma
 
-    def __gaussian_noise__(self, image):
+    def __gaussian_noise__(self, image: np.ndarray) -> np.ndarray:
+        """Apply gaussian noise to the image.
+
+        Parameters
+        ----------
+        image: numpy.ndarray
+            image to perform opetation
+
+        Returns
+        -------
+        numpy.ndarray
+            image array after operation is performed
+
+        """
         img = np.array(image).astype(np.int16)
         tmp = np.zeros(img.shape, np.int16)
         img = img + cv2.randn(tmp, self.mean, self.sigma)
@@ -25,19 +50,53 @@ class GaussianNoiseAugmentor(Operation):
 
         return image
 
-    def perform_operation(self, images):
+    def perform_operation(self, images: List[np.ndarray]) -> List[np.ndarray]:
+        """Apply operation to a batch of images.
+
+        Parameters
+        ----------
+        image: List[numpy.ndarray]
+            list images to perform opetation
+
+        Returns
+        -------
+        List[numpy.ndarray]
+            list of image arrays after operation is performed
+
+        """
         images = [self.__gaussian_noise__(image) for image in images]
         return images
 
 
 class SaltPepperNoiseAugmentor(Operation):
-    """Gaussian Noise in Augmentor format."""
+    """Gaussian Noise in Augmentor format.
 
-    def __init__(self, probability, prop):
+    Parameters
+    ----------
+    probability: float
+        probability of operation being performed
+    prop: float
+        image proportion value to keep
+
+    """
+    def __init__(self, probability: float, prop: float):
         Operation.__init__(self, probability)
         self.prop = prop
 
-    def __salt_pepper_noise__(self, image):
+    def __salt_pepper_noise__(self, image: np.ndarray) -> np.ndarray:
+        """Apply salt_pepper noise to the image.
+
+        Parameters
+        ----------
+        image: numpy.ndarray
+            image to perform opetation
+
+        Returns
+        -------
+        numpy.ndarray
+            image array after operation is performed
+
+        """
         img = np.array(image).astype(np.uint8)
         h = img.shape[0]
         w = img.shape[1]
@@ -56,7 +115,20 @@ class SaltPepperNoiseAugmentor(Operation):
 
         return image
 
-    def perform_operation(self, images):
+    def perform_operation(self, images: List[np.ndarray]) -> List[np.ndarray]:
+        """Apply operation to a batch of images.
+
+        Parameters
+        ----------
+        image: List[numpy.ndarray]
+            list of images to perform opetation
+
+        Returns
+        -------
+        List[numpy.ndarray]
+            list of image arrays after operation is performed
+
+        """
         images = [self.__salt_pepper_noise__(image) for image in images]
         return images
 
@@ -67,7 +139,20 @@ class InvertPartAugmentor(Operation):
     def __init__(self, probability):
         Operation.__init__(self, probability)
 
-    def __invert__(self, image):
+    def __invert__(self, image: np.ndarray) -> np.ndarray:
+        """Apply invert operation to the image.
+
+        Parameters
+        ----------
+        image: numpy.ndarray
+            image to perform opetation
+
+        Returns
+        -------
+        numpy.ndarray
+            image array after operation is performed
+
+        """
         img = np.array(image).astype(np.uint8)
         h = img.shape[0]
         w = img.shape[1]
@@ -82,6 +167,19 @@ class InvertPartAugmentor(Operation):
 
         return image
 
-    def perform_operation(self, images):
+    def perform_operation(self, images: List[np.ndarray]) -> List[np.ndarray]:
+        """Apply invert operation to a batch of images.
+
+        Parameters
+        ----------
+        image: List[numpy.ndarray]
+            list of images to perform opetation
+
+        Returns
+        -------
+        List[numpy.ndarray]
+            list of image arrays after operation is performed
+
+        """
         images = [self.__invert__(image) for image in images]
         return images
