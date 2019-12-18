@@ -1,3 +1,6 @@
+[run]
+source=robin
+
 [report]
 fail_under = 40
 show_missing = True
