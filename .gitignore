@@ -1,3 +1,6 @@
 __pycache__
 .pytest_cache/
 robin.egg-info/
+robin/utils/__pycache__*
+*__pycache__*
+*.coverage
