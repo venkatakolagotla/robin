@@ -2,5 +2,5 @@
 source=robin
 
 [report]
-fail_under = 40
+fail_under = 30
 show_missing = True
