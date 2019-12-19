@@ -1,6 +1,8 @@
 # robin
 
-[![BSD License](http://img.shields.io/badge/license-MIT-green.svg)](https://github.com/venkatakolagotla/robin/blob/master/LICENSE)  [![Build Status](https://travis-ci.org/venkatakolagotla/robin.svg?branch=master)](https://travis-ci.org/venkatakolagotla/robin) [![coverage](image:: https://codecov.io/gh/codecov/example-python/branch/master/graph/badge.svg)](https://codecov.io/gh/venkatakolagotla/robin)
+[![BSD License](http://img.shields.io/badge/license-MIT-green.svg)](https://github.com/venkatakolagotla/robin/blob/master/LICENSE)  [![Build Status](https://travis-ci.org/venkatakolagotla/robin.svg?branch=master)](https://travis-ci.org/venkatakolagotla/robin)
+[![codecov](https://codecov.io/gh/venkatakolagotla/robin/branch/master/graph/badge.svg)](https://codecov.io/gh/venkatakolagotla/robin)
+
 
 
 <img src="static/logo/robin.png" height="150" width="150">
